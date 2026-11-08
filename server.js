@@ -7,3 +7,4 @@ app.listen(PORT, () => {
   console.log(`Tagline: "Your Money, Our Transparency."`);
   console.log(`Closing: "Your Money. Our Transparency. Our Accountability."`);
 });
+

@@ -68,3 +68,4 @@ describe('Public JSON API Tests', () => {
     expect(res.body.data.monthlySpend).toBeDefined();
   });
 });
+

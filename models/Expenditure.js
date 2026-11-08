@@ -36,6 +36,7 @@ const Expenditure = {
     department = null,
     clubId = null,
     eventId = null,
+    createdBy = null,
     startDate = null,
     endDate = null,
     minAmount = null,
@@ -75,6 +76,11 @@ const Expenditure = {
     if (eventId) {
       where += ` AND e.event_id = $${idx++}`;
       params.push(parseInt(eventId, 10));
+    }
+
+    if (createdBy) {
+      where += ` AND e.created_by = $${idx++}`;
+      params.push(parseInt(createdBy, 10));
     }
 
     if (startDate) {
@@ -118,7 +124,13 @@ const Expenditure = {
     const sortCol = validSortCols.includes(sortBy) ? `e.${sortBy}` : 'e.spent_on';
     const order = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
-    const offset = (Math.max(1, parseInt(page, 10)) - 1) * parseInt(limit, 10);
+    const parsedPage = Number.parseInt(page, 10);
+    const parsedLimit = Number.parseInt(limit, 10);
+    const safePage = Number.isFinite(parsedPage) ? Math.max(1, parsedPage) : 1;
+    const safeLimit = Number.isFinite(parsedLimit)
+      ? Math.min(100, Math.max(1, parsedLimit))
+      : 10;
+    const offset = (safePage - 1) * safeLimit;
 
     const querySql = `
       SELECT e.*, 
@@ -137,16 +149,16 @@ const Expenditure = {
       ORDER BY ${sortCol} ${order}, e.id DESC
       LIMIT $${idx++} OFFSET $${idx++}
     `;
-    params.push(parseInt(limit, 10), offset);
+    params.push(safeLimit, offset);
 
     const rows = await db.any(querySql, params);
 
     return {
       rows,
       total,
-      page: parseInt(page, 10),
-      limit: parseInt(limit, 10),
-      totalPages: Math.ceil(total / parseInt(limit, 10)) || 1
+      page: safePage,
+      limit: safeLimit,
+      totalPages: Math.ceil(total / safeLimit) || 1
     };
   },
 
@@ -199,8 +211,8 @@ const Expenditure = {
         [category_id]
       );
 
-      const budgetRow = await t.oneOrNone(
-        `SELECT allocated_amount 
+      const budgetRow = await t.one(
+        `SELECT COALESCE(SUM(allocated_amount), 0)::numeric AS allocated_amount
          FROM budgets 
          WHERE category_id = $1`,
         [category_id]
@@ -213,7 +225,7 @@ const Expenditure = {
         purpose,
         duplicateCount: dupCountRow.count,
         currentCategorySpend: Number(spendRow.total),
-        categoryBudget: budgetRow ? Number(budgetRow.allocated_amount) : null
+        categoryBudget: Number(budgetRow.allocated_amount)
       });
 
       if (flagResult.shouldFlag) {
@@ -289,8 +301,8 @@ const Expenditure = {
         [updated.category_id, id]
       );
 
-      const budgetRow = await t.oneOrNone(
-        `SELECT allocated_amount 
+      const budgetRow = await t.one(
+        `SELECT COALESCE(SUM(allocated_amount), 0)::numeric AS allocated_amount
          FROM budgets 
          WHERE category_id = $1`,
         [updated.category_id]
@@ -304,7 +316,7 @@ const Expenditure = {
         purpose: updated.purpose,
         duplicateCount: dupCountRow.count,
         currentCategorySpend: Number(spendRow.total),
-        categoryBudget: budgetRow ? Number(budgetRow.allocated_amount) : null
+        categoryBudget: Number(budgetRow.allocated_amount)
       });
 
       if (flagResult.shouldFlag) {
@@ -459,3 +471,4 @@ const Expenditure = {
 };
 
 module.exports = Expenditure;
+

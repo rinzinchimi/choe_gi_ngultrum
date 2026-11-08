@@ -23,7 +23,7 @@ router.get('/notifications', requireAuthApi, apiController.getNotifications);
 // ---------------------------------------------------------------------------
 router.post(
   '/expenditures',
-  requireRoleApi('admin', 'finance_officer'),
+  requireRoleApi('admin', 'finance_officer', 'student_leader'),
   apiController.postExpenditure
 );
 
@@ -40,3 +40,4 @@ router.post(
 );
 
 module.exports = router;
+

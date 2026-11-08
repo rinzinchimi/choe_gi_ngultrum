@@ -167,6 +167,7 @@
               </td>
               <td style="text-align: center; white-space: nowrap;">
                 <a href="/expenditures/<%= exp.id %>" class="btn btn-sm btn-secondary">Inspect</a>
+                <% if (canEdit) { %>
                 <button type="button" class="btn btn-sm btn-secondary edit-btn"
                         data-id="<%= exp.id %>"
                         data-spent-on="<%= exp.spent_on %>"
@@ -174,6 +175,7 @@
                         data-category="<%= exp.category_id %>"
                         data-department="<%= exp.department %>"
                         data-amount="<%= exp.amount %>">Edit</button>
+                <% } %>
               </td>
             </tr>
           <% }) %>
@@ -181,6 +183,7 @@
       </table>
     </div>
 
+    <% if (canEdit) { %>
     <!-- Edit Modal Dialog -->
     <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center;">
       <div style="background:#fff; border-radius:0.75rem; max-width:500px; width:90%; padding:1.75rem; box-shadow:var(--shadow-lg);">
@@ -227,6 +230,7 @@
         </form>
       </div>
     </div>
+    <% } %>
   </div>
 </div>
 

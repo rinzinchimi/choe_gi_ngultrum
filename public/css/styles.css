@@ -230,20 +230,6 @@ a:hover {
   color: #fff;
 }
 
-/* Demo Notice Banner */
-.demo-banner {
-  background-color: #eff6ff;
-  border-bottom: 1px solid #bfdbfe;
-  color: #1e40af;
-  padding: 0.45rem 1rem;
-  font-size: 0.825rem;
-  text-align: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
 /* Buttons */
 .btn {
   display: inline-flex;
@@ -753,3 +739,4 @@ textarea.form-control {
   text-align: center;
   font-size: 0.8rem;
 }
+

@@ -85,3 +85,4 @@ describe('User Registration & Verification Flow', () => {
     expect(res.text).toContain('already exists');
   });
 });
+

@@ -11,13 +11,6 @@
 </head>
 <body>
 
-  <% if (typeof demoNotice !== 'undefined' && demoNotice) { %>
-    <div class="demo-banner">
-      <span>ℹ️</span>
-      <span><strong>Sample / Demo Data:</strong> Financial figures shown are calibrated mock data for college demonstration.</span>
-    </div>
-  <% } %>
-
   <header class="site-header">
     <div class="container header-inner">
       <a href="/" class="brand-wrapper">
@@ -41,6 +34,8 @@
             
             <% if (['admin', 'finance_officer'].includes(user.role)) { %>
               <li><a href="/admin/dashboard" class="nav-link <%= typeof page !== 'undefined' && page.startsWith('admin') ? 'active' : '' %>">Admin Panel</a></li>
+            <% } else if (user.role === 'student_leader') { %>
+              <li><a href="/admin/expenditures" class="nav-link <%= typeof page !== 'undefined' && page === 'admin-expenditures' ? 'active' : '' %>">Record Expenses</a></li>
             <% } %>
 
             <% if (user.role === 'auditor') { %>
@@ -75,3 +70,4 @@
 
   <main class="main-content">
     <div class="container">
+

@@ -44,11 +44,13 @@ exports.getDashboard = async (req, res) => {
 exports.getExpenditures = async (req, res) => {
   try {
     const { status, category_id, search, page = 1 } = req.query;
+    const isStudentLeader = req.session.user.role === 'student_leader';
     const result = await Expenditure.getAll({
       publishedOnly: false,
       status: status || null,
       categoryId: category_id || null,
       search: search || null,
+      createdBy: isStudentLeader ? req.session.user.id : null,
       page: parseInt(page, 10) || 1,
       limit: 15
     });
@@ -70,6 +72,8 @@ exports.getExpenditures = async (req, res) => {
       categories,
       clubs,
       events,
+      canEdit: !isStudentLeader,
+      isStudentLeader,
       success: req.query.success || null,
       error: req.query.error || null
     });
@@ -455,3 +459,4 @@ exports.getReportsCsv = async (req, res) => {
     res.status(500).send('Error generating CSV export.');
   }
 };
+

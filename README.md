@@ -310,3 +310,4 @@ docker run -p 3000:3000 --env-file .env choe-gi-ngultrum
 ---
 **Choe Gi Ngultrum (ཁྱོད་ཀྱི་དངུལ་ཀྲམ།)**  
 *"Your Money. Our Transparency. Our Accountability."*
+

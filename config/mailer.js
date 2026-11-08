@@ -16,14 +16,23 @@ if (gmailUser && gmailPass) {
   });
 }
 
+function logDevelopmentLink(label, email, url, error = null) {
+  if (error) {
+    console.warn(`${label} email delivery failed (${error.code || 'SMTP error'}); using development link fallback.`);
+  }
+  console.log(`\n================ ${label.toUpperCase()} (DEVELOPMENT) ================`);
+  console.log(`To: ${email}`);
+  console.log(`${label} URL: ${url}`);
+  console.log('====================================================================\n');
+}
+
 async function sendVerificationEmail(email, token) {
   const verifyUrl = `${baseUrl}/verify/${token}`;
   if (!transporter) {
-    console.log('\n================ EMAIL VERIFICATION (DEV / CONSOLE) ================');
-    console.log(`To: ${email}`);
-    console.log(`Token: ${token}`);
-    console.log(`Verification URL: ${verifyUrl}`);
-    console.log('====================================================================\n');
+    if (process.env.NODE_ENV !== 'development') {
+      throw new Error('Email transport is not configured.');
+    }
+    logDevelopmentLink('Verification', email, verifyUrl);
     return { dev: true, url: verifyUrl };
   }
 
@@ -40,17 +49,22 @@ async function sendVerificationEmail(email, token) {
     `,
   };
 
-  return transporter.sendMail(mailOptions);
+  try {
+    return await transporter.sendMail(mailOptions);
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'development') throw err;
+    logDevelopmentLink('Verification', email, verifyUrl, err);
+    return { dev: true, url: verifyUrl, errorCode: err.code || 'SMTP_ERROR' };
+  }
 }
 
 async function sendPasswordResetEmail(email, token) {
   const resetUrl = `${baseUrl}/reset-password/${token}`;
   if (!transporter) {
-    console.log('\n================ PASSWORD RESET (DEV / CONSOLE) ====================');
-    console.log(`To: ${email}`);
-    console.log(`Token: ${token}`);
-    console.log(`Reset URL: ${resetUrl}`);
-    console.log('====================================================================\n');
+    if (process.env.NODE_ENV !== 'development') {
+      throw new Error('Email transport is not configured.');
+    }
+    logDevelopmentLink('Password reset', email, resetUrl);
     return { dev: true, url: resetUrl };
   }
 
@@ -67,7 +81,13 @@ async function sendPasswordResetEmail(email, token) {
     `,
   };
 
-  return transporter.sendMail(mailOptions);
+  try {
+    return await transporter.sendMail(mailOptions);
+  } catch (err) {
+    if (process.env.NODE_ENV !== 'development') throw err;
+    logDevelopmentLink('Password reset', email, resetUrl, err);
+    return { dev: true, url: resetUrl, errorCode: err.code || 'SMTP_ERROR' };
+  }
 }
 
 module.exports = {

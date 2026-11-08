@@ -49,11 +49,30 @@ exports.postLogin = async (req, res) => {
     }
 
     if (!user.is_verified) {
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      await User.setVerificationToken(user.id, verificationToken);
+      let verificationUrl = null;
+      let verificationMessage = 'A new verification email was sent. Check your inbox and spam folder.';
+
+      try {
+        const emailResult = await sendVerificationEmail(user.email, verificationToken);
+        if (emailResult.dev) {
+          verificationUrl = emailResult.url;
+          verificationMessage = 'The email service is unavailable in development. Use the button below to verify your account.';
+        }
+      } catch (emailErr) {
+        console.error('Login verification email failed:', emailErr.code || emailErr.message);
+        verificationMessage = emailErr.code === 'EAUTH'
+          ? 'Gmail rejected the sender login. Correct the app password, or use the development verification link if available.'
+          : 'The verification email could not be sent. Check the app server email configuration.';
+      }
+
       return res.render('login', {
         title: 'Login - Choe Gi Ngultrum',
         page: 'login',
-        error: 'Please verify your college email before logging in. Check your inbox or contact administration.',
-        email
+        error: verificationMessage,
+        email,
+        verificationUrl
       });
     }
 
@@ -79,6 +98,8 @@ exports.postLogin = async (req, res) => {
       return res.redirect('/admin/dashboard');
     } else if (user.role === 'auditor') {
       return res.redirect('/audit-log');
+    } else if (user.role === 'student_leader') {
+      return res.redirect('/admin/expenditures');
     }
     return res.redirect('/dashboard');
   } catch (err) {
@@ -128,6 +149,29 @@ exports.postSignup = async (req, res) => {
     // Check duplicate email
     const existing = await User.findByEmail(email);
     if (existing) {
+      if (!existing.is_verified) {
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        await User.setVerificationToken(existing.id, verificationToken);
+
+        try {
+          const emailResult = await sendVerificationEmail(email, verificationToken);
+          const delivery = emailResult.dev ? '&delivery=console' : '';
+          return res.redirect('/signup-success?email=' + encodeURIComponent(email) + delivery);
+        } catch (emailErr) {
+          console.error('Verification email resend failed:', emailErr.code || emailErr.message);
+          const emailErrorMessage = emailErr.code === 'EAUTH'
+            ? 'Gmail rejected the configured email login. Update GMAIL_USER and GMAIL_APP_PASSWORD in .env, restart the app, and try again.'
+            : 'Your account exists but the verification email could not be sent. Check the app server’s email configuration, then try again.';
+          return res.status(502).render('signup', {
+            title: 'Sign Up - Choe Gi Ngultrum',
+            page: 'signup',
+            errors: [emailErrorMessage],
+            formData: req.body
+          });
+        }
+
+      }
+
       return res.status(400).render('signup', {
         title: 'Sign Up - Choe Gi Ngultrum',
         page: 'signup',
@@ -148,15 +192,34 @@ exports.postSignup = async (req, res) => {
       department: req.body.department || null
     });
 
-    await sendVerificationEmail(email, verificationToken);
+    try {
+      const emailResult = await sendVerificationEmail(email, verificationToken);
+      const delivery = emailResult.dev ? '&delivery=console' : '';
+      return res.redirect('/signup-success?email=' + encodeURIComponent(email) + delivery);
+    } catch (emailErr) {
+      console.error('Verification email send failed:', emailErr.code || emailErr.message);
+      const emailErrorMessage = emailErr.code === 'EAUTH'
+        ? 'Gmail rejected the configured email login. Update GMAIL_USER and GMAIL_APP_PASSWORD in .env, restart the app, and try again.'
+        : 'Your account was created, but the verification email could not be sent. Check the app server’s email configuration. You can submit this email address again to retry.';
+      return res.status(502).render('signup', {
+        title: 'Sign Up - Choe Gi Ngultrum',
+        page: 'signup',
+        errors: [emailErrorMessage],
+        formData: req.body
+      });
+    }
 
-    res.redirect('/signup-success?email=' + encodeURIComponent(email));
   } catch (err) {
-    console.error('Signup error:', err);
+    console.error('Signup error:', err.code || err.message);
+    const message = err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND'
+      ? 'Could not connect to the database. Check that PostgreSQL is running and the database settings are correct.'
+      : err.code === '23505'
+        ? 'An account with this email already exists. Try signing in or requesting another verification email.'
+        : 'Registration failed because of a server error. Check the app server terminal for the signup error.';
     res.status(500).render('signup', {
       title: 'Sign Up - Choe Gi Ngultrum',
       page: 'signup',
-      errors: ['Registration failed due to a server error. Please try again.'],
+      errors: [message],
       formData: req.body
     });
   }
@@ -166,7 +229,8 @@ exports.getSignupSuccess = (req, res) => {
   res.render('signup-success', {
     title: 'Registration Successful - Verify Email',
     page: 'signup',
-    email: req.query.email || ''
+    email: req.query.email || '',
+    delivery: req.query.delivery === 'console'
   });
 };
 
@@ -317,3 +381,4 @@ exports.postResetPassword = async (req, res) => {
     });
   }
 };
+

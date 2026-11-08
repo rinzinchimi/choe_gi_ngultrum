@@ -50,6 +50,15 @@ const User = {
     );
   },
 
+  async setVerificationToken(id, token) {
+    return db.none(
+      `UPDATE users
+       SET verification_token = $1
+       WHERE id = $2 AND is_verified = false`,
+      [token, id]
+    );
+  },
+
   async setResetToken(id, token, expiresAt) {
     return db.none(
       `UPDATE users 

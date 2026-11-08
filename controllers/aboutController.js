@@ -4,3 +4,4 @@ exports.getAbout = (req, res) => {
     page: 'about'
   });
 };
+

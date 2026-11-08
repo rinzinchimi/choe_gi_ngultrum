@@ -156,3 +156,4 @@ describe('Expenditures API & Workflow (Staff & Admin)', () => {
     expect(audit.after.reason).toContain('Official vendor receipt missing seal');
   });
 });
+

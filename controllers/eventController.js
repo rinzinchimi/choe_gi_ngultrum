@@ -39,3 +39,4 @@ exports.getEvents = async (req, res) => {
     });
   }
 };
+

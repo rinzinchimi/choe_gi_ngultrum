@@ -17,7 +17,10 @@ const adminController = require('../controllers/adminController');
 const auditorController = require('../controllers/auditorController');
 
 // Middleware
-const { requireAuth, requireRole, csrfProtection } = require('../middleware/auth');
+const { requireAuth, requireRole, csrfProtection, validateCsrf } = require('../middleware/auth');
+
+// Generate CSRF tokens for rendered forms and validate ordinary form posts.
+router.use(csrfProtection);
 
 // Multer storage configuration for receipts & documents
 const storage = multer.diskStorage({
@@ -43,9 +46,6 @@ const upload = multer({
     }
   }
 });
-
-// Apply CSRF Protection to web routes
-router.use(csrfProtection);
 
 // ---------------------------------------------------------------------------
 // Public Pages & Authentication
@@ -93,10 +93,10 @@ router.get('/audit-log', requireRole('auditor', 'admin'), auditorController.getA
 router.get('/admin/dashboard', requireRole('admin', 'finance_officer'), adminController.getDashboard);
 
 // Manage expenditures
-router.get('/admin/expenditures', requireRole('admin', 'finance_officer'), adminController.getExpenditures);
-router.post('/admin/expenditures', requireRole('admin', 'finance_officer'), upload.single('document'), adminController.postCreateExpenditure);
+router.get('/admin/expenditures', requireRole('admin', 'finance_officer', 'student_leader'), adminController.getExpenditures);
+router.post('/admin/expenditures', requireRole('admin', 'finance_officer', 'student_leader'), upload.single('document'), validateCsrf, adminController.postCreateExpenditure);
 router.post('/admin/expenditures/:id/edit', requireRole('admin', 'finance_officer'), adminController.postEditExpenditure);
-router.post('/admin/expenditures/:id/upload', requireRole('admin', 'finance_officer'), upload.single('document'), adminController.postUploadDocument);
+router.post('/admin/expenditures/:id/upload', requireRole('admin', 'finance_officer'), upload.single('document'), validateCsrf, adminController.postUploadDocument);
 
 // Manage budgets
 router.get('/admin/budgets', requireRole('admin', 'finance_officer'), adminController.getBudgets);
@@ -124,3 +124,4 @@ router.get('/admin/reports/csv', requireRole('admin', 'finance_officer', 'audito
 router.get('/admin/audit-log', requireRole('admin', 'auditor'), auditorController.getAuditLog);
 
 module.exports = router;
+

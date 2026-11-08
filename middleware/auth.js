@@ -97,7 +97,12 @@ function csrfProtection(req, res, next) {
       return next();
     }
 
-    const submittedToken = (req.body && req.body._csrf) || req.headers['x-csrf-token'];
+    // Defer multipart requests until after multer middleware parses form fields into req.body
+    if (req.is('multipart/form-data')) {
+      return next();
+    }
+
+    const submittedToken = (req.body && req.body._csrf) || req.query._csrf || req.headers['x-csrf-token'];
     if (!submittedToken || submittedToken !== req.session.csrfToken) {
       return res.status(403).render('about', {
         title: '403 - Invalid Session Token',
@@ -111,10 +116,42 @@ function csrfProtection(req, res, next) {
   next();
 }
 
+/**
+ * Secondary CSRF validator applied after multer parses multipart/form-data bodies
+ */
+function validateCsrf(req, res, next) {
+  if (process.env.NODE_ENV === 'test') {
+    return next();
+  }
+
+  const submittedToken = (req.body && req.body._csrf) || req.query._csrf || req.headers['x-csrf-token'];
+  if (!submittedToken || !req.session || submittedToken !== req.session.csrfToken) {
+    // Clean up uploaded file if CSRF verification fails
+    if (req.file && req.file.path) {
+      const fs = require('fs');
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (err) {
+        // Ignore unlink error
+      }
+    }
+
+    return res.status(403).render('about', {
+      title: '403 - Invalid Session Token',
+      page: 'error',
+      errorMessage: 'Invalid or expired form session token. Please refresh the page and try again.',
+      status: 403
+    });
+  }
+
+  next();
+}
+
 module.exports = {
   requireAuth,
   requireRole,
   requireAuthApi,
   requireRoleApi,
-  csrfProtection
+  csrfProtection,
+  validateCsrf
 };

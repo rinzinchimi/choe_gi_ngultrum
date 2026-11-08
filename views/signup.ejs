@@ -28,9 +28,9 @@
       </div>
 
       <div class="form-group">
-        <label for="email" class="form-label">College / Institutional Email</label>
-        <input type="email" id="email" name="email" class="form-control" placeholder="username@sherubtse.rub.edu.bt" value="<%= typeof formData !== 'undefined' && formData.email ? formData.email : '' %>" required>
-        <div class="form-hint">Must be your registered institutional college email address.</div>
+        <label for="email" class="form-label">College Email Address</label>
+        <input type="email" id="email" name="email" class="form-control" placeholder="student.sherubtse@rub.edu.bt" value="<%= typeof formData !== 'undefined' && formData.email ? formData.email : '' %>" autocomplete="email" required>
+        <div class="form-hint">Recommended: student.sherubtse@rub.edu.bt. Use an email address you can access to receive verification.</div>
       </div>
 
       <div class="form-group">
@@ -65,3 +65,4 @@
 </div>
 
 <%- include('partials/footer') %>
+
