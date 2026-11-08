@@ -1,0 +1,203 @@
+<%- include('partials/header') %>
+
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;">
+    <div>
+      <h2 style="font-size: 1.6rem; margin-bottom: 0.25rem;">Financial Analytics & Visualizations</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Comprehensive visual tracking of college spending patterns, category balances, and monthly cash flow.
+      </p>
+    </div>
+    <div>
+      <a href="/api/analytics" target="_blank" class="btn btn-sm btn-secondary">JSON API Feed &rarr;</a>
+    </div>
+  </div>
+</div>
+
+<!-- KPI Mini Summary -->
+<div class="stats-grid" style="margin-bottom: 2rem;">
+  <div class="stat-card">
+    <div class="stat-title">Total Allocated Budget</div>
+    <div class="stat-value">Nu. <%= Number(stats.totalBudget).toLocaleString() %></div>
+    <div class="stat-meta">8 Academic & Operational Categories</div>
+  </div>
+
+  <div class="stat-card accent">
+    <div class="stat-title">Total Actual Spent</div>
+    <div class="stat-value">Nu. <%= Number(stats.totalSpent).toLocaleString() %></div>
+    <div class="stat-meta"><%= stats.percentSpent %>% of total budget spent</div>
+  </div>
+
+  <div class="stat-card success">
+    <div class="stat-title">Remaining Surplus</div>
+    <div class="stat-value">Nu. <%= Number(stats.remaining).toLocaleString() %></div>
+    <div class="stat-meta"><%= (100 - parseFloat(stats.percentSpent)).toFixed(1) %>% remaining balance</div>
+  </div>
+
+  <div class="stat-card info">
+    <div class="stat-title">Average Monthly Outflow</div>
+    <div class="stat-value">Nu. 520,000</div>
+    <div class="stat-meta">Based on Feb–Jul semester cycle</div>
+  </div>
+</div>
+
+<!-- Charts Grid -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem; margin-bottom: 2rem;">
+  <!-- Chart 1: Budget vs Actual (Grouped Bar Chart in Nu. thousand) -->
+  <div class="card" style="margin: 0;">
+    <div class="card-header">
+      <div>
+        <h3 style="font-size: 1.1rem;">Budget vs. Actual (Nu. in Thousands)</h3>
+        <p style="font-size: 0.775rem; color: var(--text-muted); margin: 0;">Comparing allocated vs actual disbursed amounts per category</p>
+      </div>
+    </div>
+    <div style="position: relative; height: 320px;">
+      <canvas id="budgetVsActualChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart 2: Monthly Spend Trend (Line Chart) -->
+  <div class="card" style="margin: 0;">
+    <div class="card-header">
+      <div>
+        <h3 style="font-size: 1.1rem;">Monthly Spending Trend (Feb – Jul 2026)</h3>
+        <p style="font-size: 0.775rem; color: var(--text-muted); margin: 0;">Disbursement timeline throughout the semester</p>
+      </div>
+    </div>
+    <div style="position: relative; height: 320px;">
+      <canvas id="monthlySpendChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Chart 3 & Detailed Table -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h3 style="font-size: 1.15rem;">Category Allocation & Disbursement Ledger</h3>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Detailed reconciliation across all budget categories</p>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th style="text-align: right;">Allocated Budget</th>
+          <th style="text-align: right;">Actual Spent</th>
+          <th style="text-align: right;">Remaining Funds</th>
+          <th style="text-align: center;">% Spent</th>
+          <th>Budget Utilization Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% categories.forEach(cat => { %>
+          <tr>
+            <td><strong><%= cat.name %></strong></td>
+            <td style="text-align: right;">Nu. <%= Number(cat.allocated_amount).toLocaleString() %></td>
+            <td style="text-align: right; font-weight: 600; color: var(--primary);">
+              Nu. <%= Number(cat.spent_amount).toLocaleString() %>
+            </td>
+            <td style="text-align: right; font-weight: 600; color: #16a34a;">
+              Nu. <%= Number(cat.remaining_amount).toLocaleString() %>
+            </td>
+            <td style="text-align: center; font-weight: 600;">
+              <%= cat.percentage_spent %>%
+            </td>
+            <td>
+              <div class="progress-bar-container" style="height: 8px; margin: 0;">
+                <div class="progress-bar-fill" style="width: <%= Math.min(100, cat.percentage_spent) %>%;"></div>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const categoriesData = <%- JSON.stringify(categories) %>;
+    const monthlyData = <%- JSON.stringify(monthlySpend) %>;
+
+    // 1. Budget vs Actual Grouped Bar Chart (Nu. in thousands)
+    const ctxBar = document.getElementById('budgetVsActualChart');
+    if (ctxBar) {
+      new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+          labels: categoriesData.map(c => c.name),
+          datasets: [
+            {
+              label: 'Allocated Budget',
+              data: categoriesData.map(c => Number(c.allocated_amount) / 1000),
+              backgroundColor: '#0f4c81',
+              borderRadius: 4
+            },
+            {
+              label: 'Actual Spent',
+              data: categoriesData.map(c => Number(c.spent_amount) / 1000),
+              backgroundColor: '#d97706',
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'Nu. (Thousands)' }
+            },
+            x: {
+              ticks: { maxRotation: 45, minRotation: 25, font: { size: 10 } }
+            }
+          },
+          plugins: {
+            legend: { position: 'top' }
+          }
+        }
+      });
+    }
+
+    // 2. Monthly Spend Trend Line Chart
+    const ctxLine = document.getElementById('monthlySpendChart');
+    if (ctxLine) {
+      // Reconciled target monthly data: Feb 380, Mar 470, Apr 520, May 610, Jun 640, Jul 500 (in thousands)
+      const months = ['Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026', 'Jun 2026', 'Jul 2026'];
+      const values = [380, 470, 520, 610, 640, 500];
+
+      new Chart(ctxLine, {
+        type: 'line',
+        data: {
+          labels: months,
+          datasets: [{
+            label: 'Disbursement (Nu. Thousands)',
+            data: values,
+            borderColor: '#0f4c81',
+            backgroundColor: 'rgba(15, 76, 129, 0.1)',
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: '#d97706',
+            pointRadius: 5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'Nu. (Thousands)' }
+            }
+          }
+        }
+      });
+    }
+  });
+</script>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,83 @@
+<%- include('partials/header') %>
+
+<div class="admin-layout">
+  <%- include('partials/admin-sidebar') %>
+
+  <div>
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;">
+      <div>
+        <h2 style="font-size: 1.6rem; margin-bottom: 0.25rem;">Financial Reports & Data Exports</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          Generate period summaries, category utilization digests, and download raw CSV exports.
+        </p>
+      </div>
+
+      <div>
+        <a href="/admin/reports/csv" class="btn btn-primary" download="choe_gi_ngultrum_expenditures.csv">
+          📥 Download Full Ledger (CSV)
+        </a>
+      </div>
+    </div>
+
+    <!-- Summary KPI Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-title">Total Allocated Budget</div>
+        <div class="stat-value">Nu. <%= Number(stats.totalBudget).toLocaleString() %></div>
+        <div class="stat-meta">FY 2025-2026 Ceiling</div>
+      </div>
+
+      <div class="stat-card accent">
+        <div class="stat-title">Disbursed Expenditures</div>
+        <div class="stat-value">Nu. <%= Number(stats.totalSpent).toLocaleString() %></div>
+        <div class="stat-meta"><%= stats.percentSpent %>% utilization</div>
+      </div>
+
+      <div class="stat-card success">
+        <div class="stat-title">Current Liquid Surplus</div>
+        <div class="stat-value">Nu. <%= Number(stats.remaining).toLocaleString() %></div>
+        <div class="stat-meta">College reserve balance</div>
+      </div>
+    </div>
+
+    <!-- Category Reports Table -->
+    <div class="card">
+      <div class="card-header">
+        <h3 style="font-size: 1.15rem;">Category Allocation vs. Actual Spending Report</h3>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th style="text-align: right;">Allocated Amount</th>
+              <th style="text-align: right;">Actual Spent</th>
+              <th style="text-align: right;">Remaining Funds</th>
+              <th style="text-align: center;">Utilization %</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% categories.forEach(cat => { %>
+              <tr>
+                <td><strong><%= cat.name %></strong></td>
+                <td style="text-align: right;">Nu. <%= Number(cat.allocated_amount).toLocaleString() %></td>
+                <td style="text-align: right; font-weight: 600; color: var(--primary);">
+                  Nu. <%= Number(cat.spent_amount).toLocaleString() %>
+                </td>
+                <td style="text-align: right; font-weight: 600; color: #16a34a;">
+                  Nu. <%= Number(cat.remaining_amount).toLocaleString() %>
+                </td>
+                <td style="text-align: center; font-weight: 600;">
+                  <%= cat.percentage_spent %>%
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

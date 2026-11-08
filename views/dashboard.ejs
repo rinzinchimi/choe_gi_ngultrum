@@ -1,0 +1,189 @@
+<%- include('partials/header') %>
+
+<div style="margin-bottom: 1.75rem;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;">
+    <div>
+      <h2 style="font-size: 1.6rem; margin-bottom: 0.25rem;">Student Dashboard</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Welcome, <strong><%= user.name %></strong> &bull; Department: <%= user.department || 'Undergraduate' %>
+      </p>
+    </div>
+    <div>
+      <a href="/notifications" class="btn btn-secondary btn-sm">
+        🔔 Notifications <% if (unreadNotifications > 0) { %><span class="badge badge-pending"><%= unreadNotifications %> unread</span><% } %>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- KPI Stat Cards -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-title">Total College Budget</div>
+    <div class="stat-value">Nu. <%= Number(stats.totalBudget).toLocaleString() %></div>
+    <div class="stat-meta">Fiscal Year 2025-2026 Allocation</div>
+  </div>
+
+  <div class="stat-card accent">
+    <div class="stat-title">Total Verified Spent</div>
+    <div class="stat-value">Nu. <%= Number(stats.totalSpent).toLocaleString() %></div>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" style="width: <%= stats.percentSpent %>%;"></div>
+    </div>
+    <div class="stat-meta"><%= stats.percentSpent %>% disbursed of total budget</div>
+  </div>
+
+  <div class="stat-card success">
+    <div class="stat-title">Remaining Funds</div>
+    <div class="stat-value">Nu. <%= Number(stats.remaining).toLocaleString() %></div>
+    <div class="stat-meta">Surplus available across categories</div>
+  </div>
+
+  <div class="stat-card info">
+    <div class="stat-title">Active Projects & Events</div>
+    <div class="stat-value"><%= stats.activeProjects %> Projects</div>
+    <div class="stat-meta">
+      <a href="/events" style="color: var(--primary); font-weight: 500;">View all events &rarr;</a>
+    </div>
+  </div>
+</div>
+
+<!-- Charts & Category Breakdown -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+  <!-- Donut Chart Card -->
+  <div class="card" style="margin-bottom: 0;">
+    <div class="card-header">
+      <h3 style="font-size: 1.1rem;">Spending by Category</h3>
+      <a href="/analytics" style="font-size: 0.8rem;">Full Analytics &rarr;</a>
+    </div>
+    <div style="position: relative; height: 260px; display: flex; align-items: center; justify-content: center;">
+      <canvas id="categoryDonutChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Category List Card -->
+  <div class="card" style="margin-bottom: 0;">
+    <div class="card-header">
+      <h3 style="font-size: 1.1rem;">Category Spend vs Allocation</h3>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 0.85rem; max-height: 270px; overflow-y: auto; padding-right: 0.5rem;">
+      <% categories.forEach(cat => { %>
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.25rem;">
+            <span><strong><%= cat.name %></strong></span>
+            <span>Nu. <%= Number(cat.spent_amount).toLocaleString() %> / <%= Number(cat.allocated_amount).toLocaleString() %> (<%= cat.percentage_spent %>%)</span>
+          </div>
+          <div class="progress-bar-container" style="height: 6px; margin: 0;">
+            <div class="progress-bar-fill" style="width: <%= Math.min(100, cat.percentage_spent) %>%;"></div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Expenses Table & Mobile Cards -->
+<div class="card">
+  <div class="card-header">
+    <div>
+      <h3 style="font-size: 1.15rem;">Recent Verified Expenditures</h3>
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Latest published transactions on the transparency ledger</p>
+    </div>
+    <a href="/expenditures" class="btn btn-secondary btn-sm">View Full Ledger &rarr;</a>
+  </div>
+
+  <!-- Desktop Table -->
+  <div class="table-responsive hide-on-mobile">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Purpose</th>
+          <th>Category</th>
+          <th>Department</th>
+          <th style="text-align: right;">Amount</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% recentExpenses.forEach(exp => { %>
+          <tr>
+            <td style="white-space: nowrap;"><%= exp.spent_on %></td>
+            <td><strong><%= exp.purpose %></strong></td>
+            <td><%= exp.category_name %></td>
+            <td><%= exp.department %></td>
+            <td style="text-align: right; font-weight: 600;">Nu. <%= Number(exp.amount).toLocaleString() %></td>
+            <td>
+              <span class="badge badge-<%= exp.status %>">
+                <span><%= exp.status === 'approved' ? '✓' : '•' %></span>
+                <span><%= exp.status.replace('_', ' ') %></span>
+              </span>
+            </td>
+            <td>
+              <a href="/expenditures/<%= exp.id %>" class="btn btn-sm btn-secondary">Inspect</a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Card List -->
+  <div class="mobile-cards">
+    <% recentExpenses.forEach(exp => { %>
+      <div class="mobile-exp-card">
+        <div class="mobile-exp-header">
+          <div>
+            <strong><%= exp.purpose %></strong>
+            <div style="font-size: 0.8rem; color: var(--text-muted);"><%= exp.category_name %> &bull; <%= exp.spent_on %></div>
+          </div>
+          <span class="badge badge-<%= exp.status %>"><%= exp.status %></span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 0.75rem;">
+          <span style="font-weight: 700; font-size: 1.1rem; color: var(--primary);">Nu. <%= Number(exp.amount).toLocaleString() %></span>
+          <a href="/expenditures/<%= exp.id %>" class="btn btn-sm btn-secondary">Details &rarr;</a>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const categoriesData = <%- JSON.stringify(categories) %>;
+    const labels = categoriesData.map(c => c.name);
+    const data = categoriesData.map(c => Number(c.spent_amount));
+
+    const ctx = document.getElementById('categoryDonutChart');
+    if (ctx) {
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: [
+              '#0f4c81', '#d97706', '#16a34a', '#0284c7',
+              '#7c3aed', '#db2777', '#059669', '#64748b'
+            ],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { boxWidth: 12, font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+  });
+</script>
+
+<%- include('partials/footer') %>

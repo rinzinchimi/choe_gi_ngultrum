@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Choe Gi Ngultrum (ཁྱོད་ཀྱི་དངུལ་ཀྲམ།)' %></title>
+  <meta name="description" content="Financial transparency and expenditure tracking web app for colleges in Bhutan. Your Money, Our Transparency.">
+  <link rel="stylesheet" href="/css/styles.css">
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <% if (typeof demoNotice !== 'undefined' && demoNotice) { %>
+    <div class="demo-banner">
+      <span>ℹ️</span>
+      <span><strong>Sample / Demo Data:</strong> Financial figures shown are calibrated mock data for college demonstration.</span>
+    </div>
+  <% } %>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="brand-wrapper">
+        <div class="brand-emblem">Nu.</div>
+        <div class="brand-text">
+          <h1>Choe Gi Ngultrum</h1>
+          <span class="dzongkha-text">ཁྱོད་ཀྱི་དངུལ་ཀྲམ། &bull; Your Money, Our Transparency.</span>
+        </div>
+      </a>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="/" class="nav-link <%= typeof page !== 'undefined' && page === 'home' ? 'active' : '' %>">Home</a></li>
+          <li><a href="/expenditures" class="nav-link <%= typeof page !== 'undefined' && page === 'expenditures' ? 'active' : '' %>">Expenditures</a></li>
+          <li><a href="/analytics" class="nav-link <%= typeof page !== 'undefined' && page === 'analytics' ? 'active' : '' %>">Analytics</a></li>
+          <li><a href="/events" class="nav-link <%= typeof page !== 'undefined' && page === 'events' ? 'active' : '' %>">Projects & Events</a></li>
+          <li><a href="/about" class="nav-link <%= typeof page !== 'undefined' && page === 'about' ? 'active' : '' %>">About</a></li>
+
+          <% if (user) { %>
+            <li><a href="/dashboard" class="nav-link <%= typeof page !== 'undefined' && page === 'dashboard' ? 'active' : '' %>">Dashboard</a></li>
+            
+            <% if (['admin', 'finance_officer'].includes(user.role)) { %>
+              <li><a href="/admin/dashboard" class="nav-link <%= typeof page !== 'undefined' && page.startsWith('admin') ? 'active' : '' %>">Admin Panel</a></li>
+            <% } %>
+
+            <% if (user.role === 'auditor') { %>
+              <li><a href="/audit-log" class="nav-link <%= typeof page !== 'undefined' && page === 'audit-log' ? 'active' : '' %>">Audit Log</a></li>
+            <% } %>
+          <% } %>
+        </ul>
+      </nav>
+
+      <div class="nav-auth">
+        <% if (user) { %>
+          <a href="/notifications" class="btn btn-sm btn-secondary" title="Notifications">
+            🔔 <span id="nav-unread-count"><%= typeof unreadNotifications !== 'undefined' && unreadNotifications > 0 ? unreadNotifications : '' %></span>
+          </a>
+          <div class="user-pill">
+            <span><%= user.name.split(' ')[0] %></span>
+            <span class="user-badge"><%= user.role.replace('_', ' ') %></span>
+          </div>
+          <form action="/logout" method="POST" style="display:inline;">
+            <% if (typeof csrfToken !== 'undefined') { %>
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <% } %>
+            <button type="submit" class="btn btn-sm btn-secondary">Logout</button>
+          </form>
+        <% } else { %>
+          <a href="/login" class="btn btn-sm btn-secondary">Login</a>
+          <a href="/signup" class="btn btn-sm btn-accent">Sign Up</a>
+        <% } %>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container">

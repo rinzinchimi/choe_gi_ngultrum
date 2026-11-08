@@ -1,0 +1,68 @@
+<%- include('partials/header') %>
+
+<div style="max-width: 800px; margin: 0 auto;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem;">
+    <div>
+      <h2 style="font-size: 1.6rem; margin-bottom: 0.25rem;">Notifications & Activity</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Direct alerts on published expenditures, answered inquiries, and institutional verifications.
+      </p>
+    </div>
+
+    <% if (unreadCount > 0) { %>
+      <form action="/notifications/all/read" method="POST">
+        <% if (typeof csrfToken !== 'undefined') { %>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <% } %>
+        <button type="submit" class="btn btn-sm btn-secondary">Mark All as Read</button>
+      </form>
+    <% } %>
+  </div>
+
+  <% if (notifications.length === 0) { %>
+    <div class="card" style="text-align: center; padding: 3rem 1rem;">
+      <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">🔔</div>
+      <h3 style="font-size: 1.15rem; margin-bottom: 0.25rem;">No Notifications</h3>
+      <p style="color: var(--text-muted); font-size: 0.875rem;">You are up to date on all expenditure activities and inquiries.</p>
+    </div>
+  <% } else { %>
+    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+      <% notifications.forEach(item => { %>
+        <div class="card" style="margin-bottom: 0; padding: 1rem 1.25rem; <%= !item.read_at ? 'border-left: 4px solid var(--accent); background: var(--primary-subtle);' : '' %>">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+            <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+              <span style="font-size: 1.25rem;">
+                <% if (item.type === 'answer') { %>💬<% } else if (item.type === 'approval') { %>✅<% } else { %>📢<% } %>
+              </span>
+              <div>
+                <p style="margin: 0; font-size: 0.9rem; font-weight: <%= !item.read_at ? '600' : '400' %>; color: var(--text-main);">
+                  <%= item.message %>
+                </p>
+                <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.25rem;">
+                  <%= new Date(item.created_at).toLocaleString() %>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; align-items: center; white-space: nowrap;">
+              <% if (item.link) { %>
+                <a href="<%= item.link %>" class="btn btn-sm btn-secondary">View Record</a>
+              <% } %>
+
+              <% if (!item.read_at) { %>
+                <form action="/notifications/<%= item.id %>/read" method="POST" style="display: inline;">
+                  <% if (typeof csrfToken !== 'undefined') { %>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <% } %>
+                  <button type="submit" class="btn btn-sm btn-secondary" title="Mark as read">✓ Read</button>
+                </form>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

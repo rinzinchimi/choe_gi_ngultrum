@@ -1,0 +1,60 @@
+<aside class="admin-sidebar">
+  <div style="padding-bottom: 0.75rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border);">
+    <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px;">Administration</div>
+    <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);"><%= user.name %></div>
+    <div style="font-size: 0.775rem; color: var(--text-muted); text-transform: capitalize;"><%= user.role.replace('_', ' ') %></div>
+  </div>
+
+  <ul class="admin-menu">
+    <li>
+      <a href="/admin/dashboard" class="admin-menu-link <%= page === 'admin-dashboard' ? 'active' : '' %>">
+        <span>📊</span> <span>Overview</span>
+      </a>
+    </li>
+    <li>
+      <a href="/admin/expenditures" class="admin-menu-link <%= page === 'admin-expenditures' ? 'active' : '' %>">
+        <span>🧾</span> <span>Expenditures</span>
+      </a>
+    </li>
+    <li>
+      <a href="/admin/budgets" class="admin-menu-link <%= page === 'admin-budgets' ? 'active' : '' %>">
+        <span>💰</span> <span>Budgets</span>
+      </a>
+    </li>
+    <% if (user.role === 'admin') { %>
+      <li>
+        <a href="/admin/approvals" class="admin-menu-link <%= page === 'admin-approvals' ? 'active' : '' %>">
+          <span>⚖️</span> <span>Approval Queue</span>
+        </a>
+      </li>
+    <% } %>
+    <li>
+      <a href="/admin/questions" class="admin-menu-link <%= page === 'admin-questions' ? 'active' : '' %>">
+        <span>💬</span> <span>Questions Inbox</span>
+      </a>
+    </li>
+    <% if (user.role === 'admin') { %>
+      <li>
+        <a href="/admin/users" class="admin-menu-link <%= page === 'admin-users' ? 'active' : '' %>">
+          <span>👥</span> <span>Users & Roles</span>
+        </a>
+      </li>
+    <% } %>
+    <li>
+      <a href="/admin/reports" class="admin-menu-link <%= page === 'admin-reports' ? 'active' : '' %>">
+        <span>📈</span> <span>Reports & CSV</span>
+      </a>
+    </li>
+    <li>
+      <a href="/admin/audit-log" class="admin-menu-link <%= page === 'audit-log' ? 'active' : '' %>">
+        <span>📜</span> <span>Audit Trail Log</span>
+      </a>
+    </li>
+  </ul>
+
+  <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
+    <a href="/dashboard" class="btn btn-sm btn-secondary" style="width: 100%;">
+      &larr; Student View
+    </a>
+  </div>
+</aside>

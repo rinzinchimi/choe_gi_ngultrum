@@ -1,0 +1,257 @@
+<%- include('partials/header') %>
+
+<div class="admin-layout">
+  <%- include('partials/admin-sidebar') %>
+
+  <div>
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap;">
+      <div>
+        <h2 style="font-size: 1.6rem; margin-bottom: 0.25rem;">Expenditures Ledger Management</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          Log institutional spending, attach invoices, and monitor guideline checkpoints.
+        </p>
+      </div>
+
+      <button class="btn btn-sm btn-primary" onclick="toggleNewForm()">+ Record New Expense</button>
+    </div>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <!-- Record New Expense Form Card -->
+    <div id="newExpenseCard" class="card" style="border: 2px solid var(--primary-light); background: #fdfefe; margin-bottom: 2rem;">
+      <div class="card-header">
+        <h3 style="font-size: 1.15rem; color: var(--primary);">Record New Institutional Expenditure</h3>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="toggleNewForm()">Hide Form</button>
+      </div>
+
+      <form action="/admin/expenditures" method="POST" enctype="multipart/form-data">
+        <% if (typeof csrfToken !== 'undefined') { %>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <% } %>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Date Disbursed *</label>
+            <input type="date" name="spent_on" class="form-control" value="<%= new Date().toISOString().split('T')[0] %>" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select name="category_id" class="form-control" required>
+              <option value="">Select Category</option>
+              <% categories.forEach(c => { %>
+                <option value="<%= c.id %>"><%= c.name %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Amount (Nu.) *</label>
+            <input type="number" step="0.01" name="amount" class="form-control" placeholder="0.00" required>
+            <div class="form-hint">Rule checkpoints evaluate against category thresholds.</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Department</label>
+            <input type="text" name="department" class="form-control" placeholder="e.g. Sports, Estate, Student Affairs" value="<%= user.department || 'General' %>">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Purpose / Description *</label>
+          <input type="text" name="purpose" class="form-control" placeholder="Clear, descriptive purpose of expenditure" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label class="form-label">Associated Club / Society (Optional)</label>
+            <select name="club_id" class="form-control">
+              <option value="">None / General College</option>
+              <% clubs.forEach(cl => { %>
+                <option value="<%= cl.id %>"><%= cl.name %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Associated Project / Event (Optional)</label>
+            <select name="event_id" class="form-control">
+              <option value="">None / Routine Operational</option>
+              <% events.forEach(ev => { %>
+                <option value="<%= ev.id %>"><%= ev.name %></option>
+              <% }) %>
+            </select>
+          </div>
+        </div>
+
+        <!-- Document Upload -->
+        <div style="background: var(--surface-alt); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.25rem;">
+          <h4 style="font-size: 0.875rem; margin-bottom: 0.5rem;">Digital Voucher / Invoice Attachment</h4>
+          <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label" style="font-size: 0.8rem;">Document Classification</label>
+              <select name="document_type" class="form-control" style="font-size: 0.85rem;">
+                <option value="invoice">Vendor Invoice / Bill</option>
+                <option value="receipt">Payment Receipt</option>
+                <option value="approval_letter">Approval Sanction Memo</option>
+                <option value="other">Other Supporting Proof</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin: 0;">
+              <label class="form-label" style="font-size: 0.8rem;">Upload Voucher (PDF, JPG, PNG &le; 5MB)</label>
+              <input type="file" name="document" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+          <button type="submit" class="btn btn-primary">Save & Submit for Verification</button>
+          <button type="button" class="btn btn-secondary" onclick="toggleNewForm()">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Status Tabs -->
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+      <a href="/admin/expenditures" class="btn btn-sm <%= !filters.status ? 'btn-primary' : 'btn-secondary' %>">All</a>
+      <a href="/admin/expenditures?status=pending" class="btn btn-sm <%= filters.status === 'pending' ? 'btn-primary' : 'btn-secondary' %>">Pending</a>
+      <a href="/admin/expenditures?status=requires_review" class="btn btn-sm <%= filters.status === 'requires_review' ? 'btn-primary' : 'btn-secondary' %>">Requires Review</a>
+      <a href="/admin/expenditures?status=approved" class="btn btn-sm <%= filters.status === 'approved' ? 'btn-primary' : 'btn-secondary' %>">Approved (Published)</a>
+      <a href="/admin/expenditures?status=rejected" class="btn btn-sm <%= filters.status === 'rejected' ? 'btn-primary' : 'btn-secondary' %>">Rejected</a>
+    </div>
+
+    <!-- Expenditures Table -->
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Purpose</th>
+            <th>Category</th>
+            <th>Department</th>
+            <th style="text-align: right;">Amount</th>
+            <th>Status</th>
+            <th style="text-align: center;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (expenditures.length === 0) { %>
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                No expenditure records match the selected status filter.
+              </td>
+            </tr>
+          <% } %>
+          <% expenditures.forEach(exp => { %>
+            <tr>
+              <td style="white-space: nowrap;"><%= exp.spent_on %></td>
+              <td>
+                <strong><%= exp.purpose %></strong>
+                <% if (exp.event_name) { %>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);"><%= exp.event_name %></div>
+                <% } %>
+              </td>
+              <td><%= exp.category_name %></td>
+              <td><%= exp.department %></td>
+              <td style="text-align: right; font-weight: 700;">Nu. <%= Number(exp.amount).toLocaleString() %></td>
+              <td>
+                <span class="badge badge-<%= exp.status %>">
+                  <%= exp.status.replace('_', ' ') %>
+                </span>
+              </td>
+              <td style="text-align: center; white-space: nowrap;">
+                <a href="/expenditures/<%= exp.id %>" class="btn btn-sm btn-secondary">Inspect</a>
+                <button type="button" class="btn btn-sm btn-secondary edit-btn"
+                        data-id="<%= exp.id %>"
+                        data-spent-on="<%= exp.spent_on %>"
+                        data-purpose="<%= exp.purpose %>"
+                        data-category="<%= exp.category_id %>"
+                        data-department="<%= exp.department %>"
+                        data-amount="<%= exp.amount %>">Edit</button>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Edit Modal Dialog -->
+    <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:0.75rem; max-width:500px; width:90%; padding:1.75rem; box-shadow:var(--shadow-lg);">
+        <h3 style="margin-bottom:1rem;">Edit Expenditure Record</h3>
+        <form id="editForm" method="POST">
+          <% if (typeof csrfToken !== 'undefined') { %>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <% } %>
+
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" id="editSpentOn" name="spent_on" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Purpose</label>
+            <input type="text" id="editPurpose" name="purpose" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <select id="editCategory" name="category_id" class="form-control" required>
+              <% categories.forEach(c => { %>
+                <option value="<%= c.id %>"><%= c.name %></option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Department</label>
+            <input type="text" id="editDepartment" name="department" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Amount (Nu.)</label>
+            <input type="number" step="0.01" id="editAmount" name="amount" class="form-control" required>
+            <div class="form-hint" style="color:#d97706;">Modifying the amount triggers automated guideline review checkpoints.</div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.25rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleNewForm() {
+    const card = document.getElementById('newExpenseCard');
+    card.style.display = card.style.display === 'none' ? 'block' : 'none';
+  }
+
+  document.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const d = this.dataset;
+      document.getElementById('editForm').action = '/admin/expenditures/' + d.id + '/edit';
+      document.getElementById('editSpentOn').value = d.spentOn;
+      document.getElementById('editPurpose').value = d.purpose;
+      document.getElementById('editCategory').value = d.category;
+      document.getElementById('editDepartment').value = d.department;
+      document.getElementById('editAmount').value = d.amount;
+      document.getElementById('editModal').style.display = 'flex';
+    });
+  });
+
+  function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+  }
+</script>
+
+<%- include('partials/footer') %>

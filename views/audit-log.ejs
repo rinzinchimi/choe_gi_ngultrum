@@ -1,0 +1,138 @@
+<%- include('partials/header') %>
+
+<div <% if (user && ['admin', 'finance_officer'].includes(user.role)) { %>class="admin-layout"<% } %>>
+  <% if (user && ['admin', 'finance_officer'].includes(user.role)) { %>
+    <%- include('partials/admin-sidebar') %>
+  <% } %>
+
+  <div>
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;">
+      <div>
+        <h2 style="font-size: 1.6rem; margin-bottom: 0.25rem;">Immutable Audit Trail Log</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          Cryptographically append-only transaction ledger protected by PostgreSQL trigger constraints.
+        </p>
+      </div>
+
+      <div style="font-size: 0.85rem; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; padding: 0.35rem 0.75rem; border-radius: 9999px;">
+        🔒 Append-Only: Row updates & deletes are strictly forbidden by database triggers.
+      </div>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="filter-bar">
+      <form action="<%= user && ['admin', 'finance_officer'].includes(user.role) ? '/admin/audit-log' : '/audit-log' %>" method="GET">
+        <div class="filter-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 0.8rem;">Filter Action</label>
+            <select name="action" class="form-control" style="font-size: 0.85rem;">
+              <option value="">All Actions</option>
+              <option value="created" <%= filters.action === 'created' ? 'selected' : '' %>>Created</option>
+              <option value="edited" <%= filters.action === 'edited' ? 'selected' : '' %>>Edited</option>
+              <option value="flagged" <%= filters.action === 'flagged' ? 'selected' : '' %>>Flagged</option>
+              <option value="approved" <%= filters.action === 'approved' ? 'selected' : '' %>>Approved</option>
+              <option value="rejected" <%= filters.action === 'rejected' ? 'selected' : '' %>>Rejected</option>
+              <option value="published" <%= filters.action === 'published' ? 'selected' : '' %>>Published</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 0.8rem;">Entity Type</label>
+            <select name="entityType" class="form-control" style="font-size: 0.85rem;">
+              <option value="">All Entities</option>
+              <option value="expenditure" <%= filters.entityType === 'expenditure' ? 'selected' : '' %>>Expenditure</option>
+              <option value="budget" <%= filters.entityType === 'budget' ? 'selected' : '' %>>Budget</option>
+              <option value="user" <%= filters.entityType === 'user' ? 'selected' : '' %>>User</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin: 0;">
+            <label class="form-label" style="font-size: 0.8rem;">Actor</label>
+            <select name="actorId" class="form-control" style="font-size: 0.85rem;">
+              <option value="">All Staff / Systems</option>
+              <% users.forEach(u => { %>
+                <option value="<%= u.id %>" <%= filters.actorId == u.id ? 'selected' : '' %>><%= u.name %> (<%= u.role %>)</option>
+              <% }) %>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">Filter Logs</button>
+            <a href="<%= user && ['admin', 'finance_officer'].includes(user.role) ? '/admin/audit-log' : '/audit-log' %>" class="btn btn-secondary">Reset</a>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Table of logs -->
+    <div class="card">
+      <div class="card-header">
+        <h3 style="font-size: 1.15rem;">Logged Actions (<%= pagination.total %> Total Events)</h3>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Action</th>
+              <th>Entity</th>
+              <th>Actor</th>
+              <th>Before Change</th>
+              <th>After Change</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (logs.length === 0) { %>
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                  No audit log entries found matching criteria.
+                </td>
+              </tr>
+            <% } %>
+            <% logs.forEach(log => { %>
+              <tr>
+                <td style="white-space: nowrap; font-size: 0.8rem;"><%= new Date(log.created_at).toLocaleString() %></td>
+                <td>
+                  <span class="badge <%= log.action === 'approved' || log.action === 'published' ? 'badge-approved' : (log.action === 'flagged' ? 'badge-requires_review' : (log.action === 'rejected' ? 'badge-rejected' : 'badge-pending')) %>">
+                    <%= log.action %>
+                  </span>
+                </td>
+                <td>
+                  <a href="/expenditures/<%= log.entity_id %>" style="font-weight: 600;">
+                    <%= log.entity_type %> #<%= log.entity_id %>
+                  </a>
+                </td>
+                <td>
+                  <strong><%= log.actor_name || 'System Engine' %></strong>
+                  <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: capitalize;">
+                    <%= (log.actor_role || 'Automation').replace('_', ' ') %>
+                  </div>
+                </td>
+                <td style="font-size: 0.775rem; font-family: monospace; max-width: 220px; word-break: break-all;">
+                  <%= log.before ? (typeof log.before === 'string' ? log.before : JSON.stringify(log.before)) : '—' %>
+                </td>
+                <td style="font-size: 0.775rem; font-family: monospace; max-width: 240px; word-break: break-all;">
+                  <%= log.after ? (typeof log.after === 'string' ? log.after : JSON.stringify(log.after)) : '—' %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <% if (pagination.totalPages > 1) { %>
+        <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1.5rem;">
+          <% for (let p = 1; p <= pagination.totalPages; p++) { %>
+            <a href="?<%= new URLSearchParams({ ...filters, page: p }).toString() %>" class="btn btn-sm <%= p === pagination.page ? 'btn-primary' : 'btn-secondary' %>">
+              <%= p %>
+            </a>
+          <% } %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,104 @@
+<%- include('partials/header') %>
+
+<div class="admin-layout">
+  <%- include('partials/admin-sidebar') %>
+
+  <div>
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap;">
+      <div>
+        <h2 style="font-size: 1.6rem; margin-bottom: 0.25rem;">Student Questions Inbox</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          Inquiries submitted by students seeking clarification on published expenditures.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem;">
+        <a href="/admin/questions" class="btn btn-sm <%= !filters.status ? 'btn-primary' : 'btn-secondary' %>">All Inquiries</a>
+        <a href="/admin/questions?status=open" class="btn btn-sm <%= filters.status === 'open' ? 'btn-primary' : 'btn-secondary' %>">Open (<%= questions.filter(q => q.status === 'open').length %>)</a>
+        <a href="/admin/questions?status=answered" class="btn btn-sm <%= filters.status === 'answered' ? 'btn-primary' : 'btn-secondary' %>">Answered</a>
+      </div>
+    </div>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <% if (questions.length === 0) { %>
+      <div class="card" style="text-align: center; padding: 2.5rem 1rem;">
+        <p style="color: var(--text-muted); margin: 0;">No inquiries found for this filter.</p>
+      </div>
+    <% } else { %>
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <% questions.forEach(q => { %>
+          <div id="question-<%= q.id %>" class="card" style="margin-bottom: 0; <%= q.status === 'open' ? 'border-left: 4px solid var(--accent);' : '' %>">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+              <div>
+                <span class="badge <%= q.status === 'open' ? 'badge-pending' : 'badge-approved' %>">
+                  <%= q.status.toUpperCase() %>
+                </span>
+                <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;">
+                  Inquiry on <strong><%= q.expenditure_purpose %></strong> (Nu. <%= Number(q.expenditure_amount).toLocaleString() %>)
+                </span>
+              </div>
+              <span style="font-size: 0.775rem; color: var(--text-dim);"><%= new Date(q.created_at).toLocaleString() %></span>
+            </div>
+
+            <!-- Asker Question -->
+            <div style="background: var(--surface-alt); padding: 0.85rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+              <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.25rem;">
+                <%= q.asker_name %> (<%= q.asker_email %>):
+              </div>
+              <p style="font-size: 0.9rem; color: var(--text-main); margin: 0; font-style: italic;">
+                "<%= q.text %>"
+              </p>
+            </div>
+
+            <% if (q.status === 'answered' && q.answer_text) { %>
+              <!-- Published Answer -->
+              <div style="background: #f0fdf4; border-left: 3px solid #16a34a; padding: 0.85rem 1rem; border-radius: 0.25rem;">
+                <div style="font-weight: 600; font-size: 0.8rem; color: #166534; margin-bottom: 0.25rem;">
+                  Answered by <%= q.answerer_name %> on <%= new Date(q.answered_at).toLocaleDateString() %>:
+                </div>
+                <p style="font-size: 0.875rem; color: #14532d; margin: 0;">
+                  <%= q.answer_text %>
+                </p>
+                <% if (q.document_url) { %>
+                  <div style="margin-top: 0.4rem;">
+                    <a href="<%= q.document_url %>" target="_blank" style="font-size: 0.775rem; color: #15803d; font-weight: 600;">View Attached Document &rarr;</a>
+                  </div>
+                <% } %>
+              </div>
+            <% } else { %>
+              <!-- Answer Form -->
+              <form action="/admin/questions/<%= q.id %>/answer" method="POST" style="margin-top: 0.75rem;">
+                <% if (typeof csrfToken !== 'undefined') { %>
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <% } %>
+
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                  <label class="form-label" style="font-size: 0.8rem;">Official Staff Reply (Visible to all students on the record)</label>
+                  <textarea name="answer_text" class="form-control" rows="2" placeholder="Provide a calm, factual explanation or breakdown..." required></textarea>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                  <label class="form-label" style="font-size: 0.8rem;">Optional Document URL / Reference</label>
+                  <input type="text" name="document_url" class="form-control" placeholder="e.g. /uploads/stage_quotation.pdf" style="font-size: 0.85rem;">
+                </div>
+
+                <button type="submit" class="btn btn-sm btn-primary">
+                  Publish Answer to Public Record
+                </button>
+              </form>
+            <% } %>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,20 @@
+{
+  "watch": [
+    "server.js",
+    "app.js",
+    "config",
+    "controllers",
+    "middleware",
+    "models",
+    "routes",
+    "utils",
+    "views"
+  ],
+  "ext": "js,json,ejs,css",
+  "ignore": [
+    "public/uploads/*",
+    "node_modules",
+    "tests"
+  ]
+}
+

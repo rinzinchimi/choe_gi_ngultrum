@@ -1,0 +1,174 @@
+<%- include('partials/header') %>
+
+<div class="admin-layout">
+  <%- include('partials/admin-sidebar') %>
+
+  <div>
+    <div style="margin-bottom: 1.5rem;">
+      <h2 style="font-size: 1.6rem; margin-bottom: 0.25rem;">Verification & Approval Queue</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Review expenditures submitted by finance staff prior to ledger publication.
+      </p>
+    </div>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <!-- Queue 1: Pending Approvals -->
+    <div class="card" style="margin-bottom: 2rem;">
+      <div class="card-header">
+        <h3 style="font-size: 1.15rem; color: #b45309;">
+          ⏳ Pending Approvals (<%= pendingList.length %>)
+        </h3>
+      </div>
+
+      <% if (pendingList.length === 0) { %>
+        <p style="color: var(--text-muted); font-size: 0.9rem; padding: 1rem;">
+          No pending expenditures awaiting initial verification.
+        </p>
+      <% } else { %>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <% pendingList.forEach(p => { %>
+            <div style="border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; background: var(--surface-alt);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <div>
+                  <div style="font-size: 0.8rem; color: var(--text-muted);"><%= p.category_name %> &bull; <%= p.spent_on %></div>
+                  <strong style="font-size: 1.05rem;"><%= p.purpose %></strong>
+                  <div style="font-size: 0.85rem; color: var(--text-muted);">
+                    Dept: <%= p.department %> &bull; Submitted by <%= p.creator_name %>
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <span style="font-size: 1.25rem; font-weight: 700; color: var(--primary);">
+                    Nu. <%= Number(p.amount).toLocaleString() %>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; justify-content: flex-end; padding-top: 0.75rem; border-top: 1px dashed var(--border);">
+                <a href="/expenditures/<%= p.id %>" class="btn btn-sm btn-secondary" target="_blank">Inspect Vouchers</a>
+
+                <!-- Approve -->
+                <form action="/admin/approvals/<%= p.id %>/approve" method="POST" style="display: inline;">
+                  <% if (typeof csrfToken !== 'undefined') { %>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <% } %>
+                  <button type="submit" class="btn btn-sm btn-success">✓ Verify & Publish</button>
+                </form>
+
+                <!-- Mark for Review -->
+                <form action="/admin/approvals/<%= p.id %>/flag" method="POST" style="display: inline-flex; gap: 0.35rem;">
+                  <% if (typeof csrfToken !== 'undefined') { %>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <% } %>
+                  <input type="text" name="reason" placeholder="Reason for review" style="font-size: 0.775rem; padding: 0.25rem 0.5rem; border: 1px solid var(--border); border-radius: 0.3rem;" required>
+                  <button type="submit" class="btn btn-sm btn-accent">Flag for Review</button>
+                </form>
+
+                <!-- Reject -->
+                <button type="button" class="btn btn-sm btn-danger" onclick="openRejectDialog('<%= p.id %>')">Reject</button>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Queue 2: Requires Review (Flagged Items) -->
+    <div class="card">
+      <div class="card-header">
+        <h3 style="font-size: 1.15rem; color: #c2410c;">
+          ⚠️ Flagged Items Under Review (<%= reviewList.length %>)
+        </h3>
+      </div>
+
+      <% if (reviewList.length === 0) { %>
+        <p style="color: var(--text-muted); font-size: 0.9rem; padding: 1rem;">
+          No flagged items currently requiring administrative review.
+        </p>
+      <% } else { %>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <% reviewList.forEach(r => { %>
+            <div style="border: 1px solid #fdba74; border-radius: 0.5rem; padding: 1rem; background: #fffaf5;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <div>
+                  <div style="font-size: 0.8rem; color: #9a3412;"><%= r.category_name %> &bull; <%= r.spent_on %></div>
+                  <strong style="font-size: 1.05rem;"><%= r.purpose %></strong>
+                  <div style="font-size: 0.85rem; color: var(--text-muted);">
+                    Dept: <%= r.department %> &bull; Submitted by <%= r.creator_name %>
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <span style="font-size: 1.25rem; font-weight: 700; color: #c2410c;">
+                    Nu. <%= Number(r.amount).toLocaleString() %>
+                  </span>
+                  <div><span class="badge badge-requires_review">Requires Review</span></div>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; justify-content: flex-end; padding-top: 0.75rem; border-top: 1px dashed #fed7aa;">
+                <a href="/expenditures/<%= r.id %>" class="btn btn-sm btn-secondary" target="_blank">View History</a>
+
+                <!-- Approve -->
+                <form action="/admin/approvals/<%= r.id %>/approve" method="POST" style="display: inline;">
+                  <% if (typeof csrfToken !== 'undefined') { %>
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <% } %>
+                  <button type="submit" class="btn btn-sm btn-success">✓ Clear Flags & Publish</button>
+                </form>
+
+                <!-- Reject -->
+                <button type="button" class="btn btn-sm btn-danger" onclick="openRejectDialog('<%= r.id %>')">Reject</button>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Reject Reason Dialog -->
+    <div id="rejectModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:0.75rem; max-width:480px; width:90%; padding:1.75rem; box-shadow:var(--shadow-lg);">
+        <h3 style="margin-bottom:0.75rem; color:#dc2626;">Reject Expenditure Record</h3>
+        <p style="font-size:0.875rem; color:var(--text-muted); margin-bottom:1rem;">
+          A constructive reason is required so finance staff understand the correction needed.
+        </p>
+        <form id="rejectForm" method="POST">
+          <% if (typeof csrfToken !== 'undefined') { %>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <% } %>
+
+          <div class="form-group">
+            <label class="form-label">Constructive Reason *</label>
+            <textarea name="rejection_reason" class="form-control" rows="3" placeholder="e.g. Missing official receipt voucher from sports vendor..." required></textarea>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.25rem;">
+            <button type="button" class="btn btn-secondary" onclick="closeRejectDialog()">Cancel</button>
+            <button type="submit" class="btn btn-danger">Confirm Rejection</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function openRejectDialog(id) {
+    document.getElementById('rejectForm').action = '/admin/approvals/' + id + '/reject';
+    document.getElementById('rejectModal').style.display = 'flex';
+  }
+
+  function closeRejectDialog() {
+    document.getElementById('rejectModal').style.display = 'none';
+  }
+</script>
+
+<%- include('partials/footer') %>

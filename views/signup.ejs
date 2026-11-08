@@ -1,0 +1,67 @@
+<%- include('partials/header') %>
+
+<div style="max-width: 520px; margin: 2rem auto;">
+  <div class="card" style="padding: 2rem;">
+    <div style="text-align: center; margin-bottom: 1.75rem;">
+      <h2 style="font-size: 1.5rem; margin-bottom: 0.25rem;">Student Registration</h2>
+      <p style="color: var(--text-muted); font-size: 0.875rem;">Create your student account to inspect and review college expenditures</p>
+    </div>
+
+    <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
+      <div class="alert alert-danger">
+        <ul style="padding-left: 1.25rem; margin: 0;">
+          <% errors.forEach(err => { %>
+            <li><%= err %></li>
+          <% }) %>
+        </ul>
+      </div>
+    <% } %>
+
+    <form action="/signup" method="POST">
+      <% if (typeof csrfToken !== 'undefined') { %>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <% } %>
+
+      <div class="form-group">
+        <label for="name" class="form-label">Full Name</label>
+        <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Sonam Pelmo" value="<%= typeof formData !== 'undefined' && formData.name ? formData.name : '' %>" required autofocus>
+      </div>
+
+      <div class="form-group">
+        <label for="email" class="form-label">College / Institutional Email</label>
+        <input type="email" id="email" name="email" class="form-control" placeholder="username@sherubtse.rub.edu.bt" value="<%= typeof formData !== 'undefined' && formData.email ? formData.email : '' %>" required>
+        <div class="form-hint">Must be your registered institutional college email address.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="department" class="form-label">Academic Department (Optional)</label>
+        <input type="text" id="department" name="department" class="form-control" placeholder="e.g. Computer Science, Arts, Sciences" value="<%= typeof formData !== 'undefined' && formData.department ? formData.department : '' %>">
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">Create Password</label>
+        <input type="password" id="password" name="password" class="form-control" placeholder="Minimum 8 characters with letters and numbers" required>
+        <div class="form-hint">At least 8 characters, containing uppercase, lowercase, and numeric digits.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword" class="form-label">Confirm Password</label>
+        <input type="password" id="confirmPassword" name="confirmPassword" class="form-control" placeholder="Re-enter password" required>
+      </div>
+
+      <div style="background: var(--surface-alt); padding: 0.85rem; border-radius: 0.5rem; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        🔒 Self-registration creates a verified <strong>Student</strong> account. Role elevation (such as Student Leader or Club Executive) is administered by college authorities.
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">
+        Register Student Account
+      </button>
+    </form>
+
+    <div style="margin-top: 1.5rem; text-align: center; font-size: 0.875rem; color: var(--text-muted);">
+      Already have an account? <a href="/login" style="font-weight: 600;">Sign In</a>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

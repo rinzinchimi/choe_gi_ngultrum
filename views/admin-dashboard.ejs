@@ -1,0 +1,152 @@
+<%- include('partials/header') %>
+
+<div class="admin-layout">
+  <%- include('partials/admin-sidebar') %>
+
+  <div>
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap;">
+      <div>
+        <h2 style="font-size: 1.6rem; margin-bottom: 0.25rem;">Administrative Overview</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          Financial governance cockpit for verification, inquiries, and guideline monitoring.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem;">
+        <a href="/admin/expenditures#new" class="btn btn-sm btn-primary">+ Record Expense</a>
+        <% if (user.role === 'admin') { %>
+          <a href="/admin/approvals" class="btn btn-sm btn-accent">Approval Queue</a>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Admin KPI Cards -->
+    <div class="stats-grid">
+      <div class="stat-card" style="border-left: 4px solid #d97706;">
+        <div class="stat-title">Pending Approvals</div>
+        <div class="stat-value" style="color: #d97706;"><%= stats.pendingCount %> Records</div>
+        <div class="stat-meta">Awaiting administrator verification</div>
+      </div>
+
+      <div class="stat-card" style="border-left: 4px solid #ea580c;">
+        <div class="stat-title">Requires Review (Flags)</div>
+        <div class="stat-value" style="color: #ea580c;"><%= stats.reviewCount %> Records</div>
+        <div class="stat-meta">Routine guideline threshold checkpoints</div>
+      </div>
+
+      <div class="stat-card" style="border-left: 4px solid #0284c7;">
+        <div class="stat-title">Open Student Inquiries</div>
+        <div class="stat-value" style="color: #0284c7;"><%= stats.openQuestions %> Inquiries</div>
+        <div class="stat-meta">Clarification questions awaiting staff reply</div>
+      </div>
+
+      <div class="stat-card" style="border-left: 4px solid #16a34a;">
+        <div class="stat-title">Verified Published Spend</div>
+        <div class="stat-value" style="color: #16a34a;">Nu. <%= Number(stats.totalSpent).toLocaleString() %></div>
+        <div class="stat-meta"><%= stats.percentSpent %>% of total budget</div>
+      </div>
+    </div>
+
+    <!-- Two-column queues -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+      <!-- Pending Verification -->
+      <div class="card" style="margin: 0;">
+        <div class="card-header">
+          <h3 style="font-size: 1.1rem;">Pending Verification Queue</h3>
+          <% if (user.role === 'admin') { %>
+            <a href="/admin/approvals" style="font-size: 0.8rem;">View All (<%= stats.pendingCount %>) &rarr;</a>
+          <% } %>
+        </div>
+
+        <% if (pendingList.length === 0) { %>
+          <p style="color: var(--text-muted); font-size: 0.875rem;">No pending approvals at this time.</p>
+        <% } else { %>
+          <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+            <% pendingList.forEach(p => { %>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0.75rem; background: var(--surface-alt); border-radius: 0.4rem; font-size: 0.85rem;">
+                <div>
+                  <strong><%= p.purpose %></strong>
+                  <div style="color: var(--text-muted); font-size: 0.75rem;"><%= p.category_name %> &bull; <%= p.spent_on %></div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-weight: 700;">Nu. <%= Number(p.amount).toLocaleString() %></div>
+                  <a href="/expenditures/<%= p.id %>" style="font-size: 0.75rem; color: var(--primary);">Review &rarr;</a>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Requires Review (Flagged Items) -->
+      <div class="card" style="margin: 0;">
+        <div class="card-header">
+          <h3 style="font-size: 1.1rem;">Requires Review (Flagged)</h3>
+          <% if (user.role === 'admin') { %>
+            <a href="/admin/approvals" style="font-size: 0.8rem;">Queue &rarr;</a>
+          <% } %>
+        </div>
+
+        <% if (reviewList.length === 0) { %>
+          <p style="color: var(--text-muted); font-size: 0.875rem;">No flagged items under review.</p>
+        <% } else { %>
+          <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+            <% reviewList.forEach(r => { %>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.65rem 0.75rem; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 0.4rem; font-size: 0.85rem;">
+                <div>
+                  <strong><%= r.purpose %></strong>
+                  <div style="color: #9a3412; font-size: 0.75rem;">Threshold / Edit checkpoint</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-weight: 700; color: #c2410c;">Nu. <%= Number(r.amount).toLocaleString() %></div>
+                  <a href="/expenditures/<%= r.id %>" style="font-size: 0.75rem; color: #ea580c; font-weight: 600;">Inspect &rarr;</a>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Recent Audit Activity -->
+    <div class="card">
+      <div class="card-header">
+        <h3 style="font-size: 1.15rem;">Recent Audit Activities</h3>
+        <a href="/admin/audit-log" style="font-size: 0.8rem;">Full Audit Log &rarr;</a>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Action</th>
+              <th>Entity</th>
+              <th>Actor</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% recentAudit.forEach(log => { %>
+              <tr>
+                <td style="white-space: nowrap; font-size: 0.8rem;"><%= new Date(log.created_at).toLocaleString() %></td>
+                <td>
+                  <span class="badge <%= log.action === 'approved' ? 'badge-approved' : (log.action === 'flagged' ? 'badge-requires_review' : 'badge-pending') %>">
+                    <%= log.action %>
+                  </span>
+                </td>
+                <td><%= log.entity_type %> #<%= log.entity_id %></td>
+                <td><strong><%= log.actor_name || 'System' %></strong> (<%= (log.actor_role || '').replace('_', ' ') %>)</td>
+                <td style="font-size: 0.775rem; font-family: monospace;">
+                  <%= log.after ? (typeof log.after === 'string' ? log.after : JSON.stringify(log.after).substring(0, 50) + '...') : '' %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

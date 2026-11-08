@@ -1,0 +1,210 @@
+<%- include('partials/header') %>
+
+<div style="margin-bottom: 1.5rem;">
+  <h2 style="font-size: 1.6rem; margin-bottom: 0.25rem;">Expenditure Tracking Ledger</h2>
+  <p style="color: var(--text-muted); font-size: 0.9rem;">
+    Browse, filter, and inspect verified financial disbursements made across college operations.
+  </p>
+</div>
+
+<!-- Filters & Search Bar -->
+<div class="filter-bar">
+  <form action="/expenditures" method="GET">
+    <div class="filter-grid">
+      <!-- Search -->
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label" style="font-size: 0.8rem;">Search Purpose / Keyword</label>
+        <input type="text" name="search" class="form-control" placeholder="e.g. Football kits, stage, sound..." value="<%= typeof filters.search !== 'undefined' ? filters.search : '' %>">
+      </div>
+
+      <!-- Category -->
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label" style="font-size: 0.8rem;">Category</label>
+        <select name="category_id" class="form-control">
+          <option value="">All Categories</option>
+          <% categories.forEach(cat => { %>
+            <option value="<%= cat.id %>" <%= filters.category_id == cat.id ? 'selected' : '' %>><%= cat.name %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <!-- Department -->
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label" style="font-size: 0.8rem;">Department</label>
+        <input type="text" name="department" class="form-control" placeholder="e.g. Sports, Estate" value="<%= typeof filters.department !== 'undefined' ? filters.department : '' %>">
+      </div>
+
+      <!-- Club -->
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label" style="font-size: 0.8rem;">Club / Society</label>
+        <select name="club_id" class="form-control">
+          <option value="">All Clubs</option>
+          <% clubs.forEach(cl => { %>
+            <option value="<%= cl.id %>" <%= filters.club_id == cl.id ? 'selected' : '' %>><%= cl.name %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <!-- Date Range Start -->
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label" style="font-size: 0.8rem;">From Date</label>
+        <input type="date" name="start_date" class="form-control" value="<%= typeof filters.start_date !== 'undefined' ? filters.start_date : '' %>">
+      </div>
+
+      <!-- Date Range End -->
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label" style="font-size: 0.8rem;">To Date</label>
+        <input type="date" name="end_date" class="form-control" value="<%= typeof filters.end_date !== 'undefined' ? filters.end_date : '' %>">
+      </div>
+
+      <!-- Min Amount -->
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label" style="font-size: 0.8rem;">Min Amount (Nu.)</label>
+        <input type="number" name="min_amount" class="form-control" placeholder="0" value="<%= typeof filters.min_amount !== 'undefined' ? filters.min_amount : '' %>">
+      </div>
+
+      <!-- Max Amount -->
+      <div class="form-group" style="margin: 0;">
+        <label class="form-label" style="font-size: 0.8rem;">Max Amount (Nu.)</label>
+        <input type="number" name="max_amount" class="form-control" placeholder="100000" value="<%= typeof filters.max_amount !== 'undefined' ? filters.max_amount : '' %>">
+      </div>
+
+      <!-- Status (for staff only) -->
+      <% if (isStaff) { %>
+        <div class="form-group" style="margin: 0;">
+          <label class="form-label" style="font-size: 0.8rem;">Status (Staff)</label>
+          <select name="status" class="form-control">
+            <option value="">All Statuses</option>
+            <option value="approved" <%= filters.status === 'approved' ? 'selected' : '' %>>Approved</option>
+            <option value="pending" <%= filters.status === 'pending' ? 'selected' : '' %>>Pending</option>
+            <option value="requires_review" <%= filters.status === 'requires_review' ? 'selected' : '' %>>Requires Review</option>
+            <option value="rejected" <%= filters.status === 'rejected' ? 'selected' : '' %>>Rejected</option>
+          </select>
+        </div>
+      <% } %>
+
+      <!-- Filter Buttons -->
+      <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+        <button type="submit" class="btn btn-primary" style="flex: 1;">Filter</button>
+        <a href="/expenditures" class="btn btn-secondary">Reset</a>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Results Summary -->
+<div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem;">
+  <span style="font-size: 0.9rem; color: var(--text-muted);">
+    Showing <%= expenditures.length %> of <%= pagination.total %> recorded expenditures
+  </span>
+  <span style="font-size: 0.85rem; color: var(--text-dim);">
+    Page <%= pagination.page %> of <%= pagination.totalPages %>
+  </span>
+</div>
+
+<!-- Desktop Table -->
+<div class="table-responsive hide-on-mobile">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Purpose</th>
+        <th>Category</th>
+        <th>Department / Club</th>
+        <th style="text-align: right;">Amount (Nu.)</th>
+        <th>Status</th>
+        <th style="text-align: center;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (expenditures.length === 0) { %>
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+            No expenditures found matching your filter criteria.
+          </td>
+        </tr>
+      <% } %>
+      <% expenditures.forEach(exp => { %>
+        <tr>
+          <td style="white-space: nowrap;"><%= exp.spent_on %></td>
+          <td>
+            <strong><%= exp.purpose %></strong>
+            <% if (exp.event_name) { %>
+              <div style="font-size: 0.775rem; color: var(--text-muted);">Project: <%= exp.event_name %></div>
+            <% } %>
+          </td>
+          <td><%= exp.category_name %></td>
+          <td>
+            <%= exp.department %>
+            <% if (exp.club_name) { %>
+              <div style="font-size: 0.775rem; color: var(--text-muted);"><%= exp.club_name %></div>
+            <% } %>
+          </td>
+          <td style="text-align: right; font-weight: 700; color: var(--primary);">
+            Nu. <%= Number(exp.amount).toLocaleString() %>
+          </td>
+          <td>
+            <span class="badge badge-<%= exp.status %>">
+              <span><%= exp.status === 'approved' ? '✓' : (exp.status === 'requires_review' ? '⚠️' : '•') %></span>
+              <span><%= exp.status.replace('_', ' ') %></span>
+            </span>
+          </td>
+          <td style="text-align: center;">
+            <a href="/expenditures/<%= exp.id %>" class="btn btn-sm btn-secondary">Inspect</a>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Mobile Cards -->
+<div class="mobile-cards">
+  <% expenditures.forEach(exp => { %>
+    <div class="mobile-exp-card">
+      <div class="mobile-exp-header">
+        <div>
+          <strong style="font-size: 1rem;"><%= exp.purpose %></strong>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">
+            <%= exp.category_name %> &bull; <%= exp.spent_on %>
+          </div>
+        </div>
+        <span class="badge badge-<%= exp.status %>"><%= exp.status.replace('_', ' ') %></span>
+      </div>
+
+      <div style="font-size: 0.85rem; color: var(--text-muted); margin: 0.5rem 0;">
+        Dept: <%= exp.department %> <%= exp.club_name ? '(' + exp.club_name + ')' : '' %>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px dashed var(--border);">
+        <span style="font-weight: 700; font-size: 1.15rem; color: var(--primary);">
+          Nu. <%= Number(exp.amount).toLocaleString() %>
+        </span>
+        <a href="/expenditures/<%= exp.id %>" class="btn btn-sm btn-secondary">Inspect Details &rarr;</a>
+      </div>
+    </div>
+  <% }) %>
+</div>
+
+<!-- Pagination Controls -->
+<% if (pagination.totalPages > 1) { %>
+  <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 2rem;">
+    <% if (pagination.page > 1) { %>
+      <a href="/expenditures?<%= new URLSearchParams({ ...filters, page: pagination.page - 1 }).toString() %>" class="btn btn-sm btn-secondary">&laquo; Previous</a>
+    <% } %>
+
+    <% for (let p = 1; p <= pagination.totalPages; p++) { %>
+      <% if (p === pagination.page) { %>
+        <span class="btn btn-sm btn-primary"><%= p %></span>
+      <% } else if (p === 1 || p === pagination.totalPages || (p >= pagination.page - 2 && p <= pagination.page + 2)) { %>
+        <a href="/expenditures?<%= new URLSearchParams({ ...filters, page: p }).toString() %>" class="btn btn-sm btn-secondary"><%= p %></a>
+      <% } %>
+    <% } %>
+
+    <% if (pagination.page < pagination.totalPages) { %>
+      <a href="/expenditures?<%= new URLSearchParams({ ...filters, page: pagination.page + 1 }).toString() %>" class="btn btn-sm btn-secondary">Next &raquo;</a>
+    <% } %>
+  </div>
+<% } %>
+
+<%- include('partials/footer') %>

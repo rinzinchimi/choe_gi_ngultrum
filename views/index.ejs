@@ -1,0 +1,205 @@
+<%- include('partials/header') %>
+
+<!-- Hero Section -->
+<section style="background: linear-gradient(135deg, #072e42 0%, #0f4c81 100%); color: #fff; padding: 3.5rem 2rem; border-radius: 1rem; margin-bottom: 2.5rem; text-align: center; border-bottom: 4px solid var(--accent);">
+  <div style="max-width: 800px; margin: 0 auto;">
+    <div style="display: inline-block; background: rgba(217, 119, 6, 0.2); border: 1px solid var(--accent); color: #fde68a; font-size: 0.85rem; font-weight: 600; padding: 0.35rem 0.85rem; border-radius: 9999px; margin-bottom: 1rem;">
+      <span class="dzongkha-text">ཁྱོད་ཀྱི་དངུལ་ཀྲམ།</span> &bull; Tertiary Education Transparency Initiative
+    </div>
+    <h2 style="font-size: 2.35rem; color: #fff; font-weight: 700; margin-bottom: 1rem; line-height: 1.25;">
+      Your Money, Our Transparency.
+    </h2>
+    <p style="font-size: 1.1rem; color: #e0f2fe; margin-bottom: 2rem; line-height: 1.6;">
+      Students know college fees fund events, sports, infrastructure, and clubs. Choe Gi Ngultrum provides open visibility into verified expenditures, answering questions with authentic records.
+    </p>
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+      <a href="/expenditures" class="btn btn-accent" style="font-size: 1rem; padding: 0.75rem 1.5rem;">Explore Expenditures</a>
+      <a href="/analytics" class="btn btn-secondary" style="font-size: 1rem; padding: 0.75rem 1.5rem; background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.3);">View Visual Analytics</a>
+      <% if (!user) { %>
+        <a href="/signup" class="btn btn-primary" style="font-size: 1rem; padding: 0.75rem 1.5rem; background: #fff; color: var(--primary);">Join As Student</a>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<!-- Reconciled Dashboard Snapshot -->
+<section style="margin-bottom: 3rem;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.25rem;">
+    <div>
+      <h3 style="font-size: 1.4rem;">Institutional Financial Snapshot (FY 2025-2026)</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Live reconciled totals from verified college ledger entries.</p>
+    </div>
+    <a href="/analytics" class="btn btn-sm btn-secondary">Detailed Analytics &rarr;</a>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-title">Total Allocated Budget</div>
+      <div class="stat-value">Nu. <%= Number(stats.totalBudget).toLocaleString() %></div>
+      <div class="stat-meta">Approved across all 8 college categories</div>
+    </div>
+
+    <div class="stat-card accent">
+      <div class="stat-title">Total Verified Spent</div>
+      <div class="stat-value">Nu. <%= Number(stats.totalSpent).toLocaleString() %></div>
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" style="width: <%= stats.percentSpent %>%;"></div>
+      </div>
+      <div class="stat-meta"><%= stats.percentSpent %>% of allocated funds disbursed</div>
+    </div>
+
+    <div class="stat-card success">
+      <div class="stat-title">Remaining Funds</div>
+      <div class="stat-value">Nu. <%= Number(stats.remaining).toLocaleString() %></div>
+      <div class="stat-meta">Surplus available for remaining semester</div>
+    </div>
+
+    <div class="stat-card info">
+      <div class="stat-title">Active Projects & Events</div>
+      <div class="stat-value"><%= stats.activeProjects %> Projects</div>
+      <div class="stat-meta">Monitored student initiatives and upgrades</div>
+    </div>
+  </div>
+</section>
+
+<!-- The Questions We Answer -->
+<section style="margin-bottom: 3.5rem;">
+  <div style="text-align: center; max-width: 700px; margin: 0 auto 2rem;">
+    <h3 style="font-size: 1.6rem;">Answering The Core Questions</h3>
+    <p style="color: var(--text-muted);">Moving from uncertainty to verifiable clarity across the campus community.</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem;">
+    <div class="card" style="border-top: 3px solid var(--primary);">
+      <h4 style="margin-bottom: 0.5rem; color: var(--primary);">"Where does the money go?"</h4>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Every verified expenditure is itemized with purpose, date, category, and attached invoices or receipts for complete visibility.</p>
+    </div>
+
+    <div class="card" style="border-top: 3px solid var(--accent);">
+      <h4 style="margin-bottom: 0.5rem; color: var(--accent);">"Does spending match the budget?"</h4>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Category-by-category visual charts compare approved allocations against actual disbursements in real time.</p>
+    </div>
+
+    <div class="card" style="border-top: 3px solid #16a34a;">
+      <h4 style="margin-bottom: 0.5rem; color: #16a34a;">"How much remains?"</h4>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Remaining balances for student clubs, sports fixtures, and maintenance projects are updated dynamically with every transaction.</p>
+    </div>
+
+    <div class="card" style="border-top: 3px solid #0284c7;">
+      <h4 style="margin-bottom: 0.5rem; color: #0284c7;">"Which projects got funding?"</h4>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Check dedicated budgets for campus Wi-Fi expansion, sports jerseys, debate tournaments, and cultural events.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6-Step Workflow: How It Works -->
+<section style="background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 2.5rem 2rem; margin-bottom: 3.5rem;">
+  <div style="text-align: center; max-width: 700px; margin: 0 auto 2.5rem;">
+    <div style="color: var(--accent); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 0.4rem;">Institutional Process</div>
+    <h3 style="font-size: 1.6rem;">How Choe Gi Ngultrum Works</h3>
+    <p style="color: var(--text-muted); font-size: 0.95rem;">An append-only audit trail ensures every financial milestone is logged, checked, and accessible.</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; position: relative;">
+    <div style="text-align: center;">
+      <div style="width: 3rem; height: 3rem; border-radius: 50%; background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">1</div>
+      <h4 style="font-size: 0.95rem; margin-bottom: 0.4rem;">Budget Allocation</h4>
+      <p style="font-size: 0.825rem; color: var(--text-muted);">Annual allocations set for categories, clubs, and capital projects.</p>
+    </div>
+
+    <div style="text-align: center;">
+      <div style="width: 3rem; height: 3rem; border-radius: 50%; background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">2</div>
+      <h4 style="font-size: 0.95rem; margin-bottom: 0.4rem;">Spending & Logging</h4>
+      <p style="font-size: 0.825rem; color: var(--text-muted);">Finance staff record expenses and upload supporting vouchers.</p>
+    </div>
+
+    <div style="text-align: center;">
+      <div style="width: 3rem; height: 3rem; border-radius: 50%; background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">3</div>
+      <h4 style="font-size: 0.95rem; margin-bottom: 0.4rem;">Verification & Review</h4>
+      <p style="font-size: 0.825rem; color: var(--text-muted);">Rule checks evaluate edits, thresholds, duplicates, and category ceilings.</p>
+    </div>
+
+    <div style="text-align: center;">
+      <div style="width: 3rem; height: 3rem; border-radius: 50%; background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">4</div>
+      <h4 style="font-size: 0.95rem; margin-bottom: 0.4rem;">Public Publication</h4>
+      <p style="font-size: 0.825rem; color: var(--text-muted);">Only fully approved records are published for the campus community.</p>
+    </div>
+
+    <div style="text-align: center;">
+      <div style="width: 3rem; height: 3rem; border-radius: 50%; background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">5</div>
+      <h4 style="font-size: 0.95rem; margin-bottom: 0.4rem;">Constructive Dialogue</h4>
+      <p style="font-size: 0.825rem; color: var(--text-muted);">Students submit polite clarification inquiries directly on expenses.</p>
+    </div>
+
+    <div style="text-align: center;">
+      <div style="width: 3rem; height: 3rem; border-radius: 50%; background: var(--primary-light); color: var(--primary); font-weight: 700; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">6</div>
+      <h4 style="font-size: 0.95rem; margin-bottom: 0.4rem;">Audited Accountability</h4>
+      <p style="font-size: 0.825rem; color: var(--text-muted);">Auditors and admins trace changes through tamper-resistant logs.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Recent Published Expenses Preview -->
+<section style="margin-bottom: 3.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+    <div>
+      <h3 style="font-size: 1.4rem;">Recent Published Expenditures</h3>
+      <p style="color: var(--text-muted); font-size: 0.875rem;">Verified records published on the college ledger.</p>
+    </div>
+    <a href="/expenditures" class="btn btn-sm btn-secondary">View Full Ledger &rarr;</a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Purpose</th>
+          <th>Category</th>
+          <th>Department</th>
+          <th style="text-align: right;">Amount</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% recentExpenses.forEach(exp => { %>
+          <tr>
+            <td style="white-space: nowrap;"><%= exp.spent_on %></td>
+            <td><strong><%= exp.purpose %></strong></td>
+            <td><%= exp.category_name %></td>
+            <td><%= exp.department %></td>
+            <td style="text-align: right; font-weight: 600;">Nu. <%= Number(exp.amount).toLocaleString() %></td>
+            <td>
+              <span class="badge badge-<%= exp.status %>">
+                <span><%= exp.status === 'approved' ? '✓' : '•' %></span>
+                <span><%= exp.status.replace('_', ' ') %></span>
+              </span>
+            </td>
+            <td>
+              <a href="/expenditures/<%= exp.id %>" class="btn btn-sm btn-secondary">Details</a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Principles Alert Box -->
+<section style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 2rem;">
+  <div style="display: flex; gap: 1rem; align-items: flex-start;">
+    <div style="font-size: 1.5rem;">⚖️</div>
+    <div>
+      <h4 style="color: #166534; margin-bottom: 0.35rem;">Principles of Our Transparency System</h4>
+      <p style="color: #14532d; font-size: 0.9rem; margin-bottom: 0.5rem;">
+        Choe Gi Ngultrum is a platform for visibility and constructive review, not a guarantee against all misuse. A "Requires Review" badge indicates routine administrative verification, never an accusation. Inquiries submitted by students serve to foster courteous campus dialogue.
+      </p>
+      <p style="color: #166534; font-weight: 600; font-size: 0.95rem; margin-bottom: 0;">
+        "Your Money. Our Transparency. Our Accountability."
+      </p>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

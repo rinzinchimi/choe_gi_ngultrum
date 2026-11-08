@@ -1,0 +1,241 @@
+<%- include('partials/header') %>
+
+<div style="margin-bottom: 1.5rem;">
+  <a href="/expenditures" class="btn btn-sm btn-secondary" style="margin-bottom: 1rem;">&larr; Back to Expenditures</a>
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+        Expenditure #<%= expenditure.id %> &bull; <%= expenditure.category_name %>
+      </div>
+      <h2 style="font-size: 1.75rem; margin: 0.25rem 0 0.5rem;"><%= expenditure.purpose %></h2>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Spent on <strong><%= expenditure.spent_on %></strong> &bull; Department: <strong><%= expenditure.department %></strong>
+        <% if (expenditure.club_name) { %> &bull; Club: <strong><%= expenditure.club_name %></strong><% } %>
+        <% if (expenditure.event_name) { %> &bull; Project: <strong><%= expenditure.event_name %></strong><% } %>
+      </p>
+    </div>
+
+    <div style="text-align: right;">
+      <div style="font-size: 1.85rem; font-weight: 700; color: var(--primary);">
+        Nu. <%= Number(expenditure.amount).toLocaleString() %>
+      </div>
+      <div style="margin-top: 0.25rem;">
+        <span class="badge badge-<%= expenditure.status %>" style="font-size: 0.85rem; padding: 0.35rem 0.75rem;">
+          <span><%= expenditure.status === 'approved' ? '✓' : (expenditure.status === 'requires_review' ? '⚠️' : '•') %></span>
+          <span><%= expenditure.status.replace('_', ' ') %></span>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if (typeof reviewFlags !== 'undefined' && reviewFlags.length > 0) { %>
+  <!-- Review Flag Notice (Neutral, non-accusatory) -->
+  <div class="alert alert-warning" style="margin-bottom: 2rem;">
+    <div style="font-size: 1.25rem;">ℹ️</div>
+    <div>
+      <strong>Guideline Review Checkpoint:</strong>
+      <p style="margin: 0.25rem 0 0.5rem; font-size: 0.875rem;">
+        This record received a routine review check in accordance with college financial transparency guidelines:
+      </p>
+      <ul style="padding-left: 1.25rem; font-size: 0.85rem; margin: 0;">
+        <% reviewFlags.forEach(rf => { %>
+          <li><%= rf.reason %></li>
+        <% }) %>
+      </ul>
+      <div style="font-size: 0.775rem; margin-top: 0.5rem; color: #78350f;">
+        Reminder: A "Requires Review" badge is an administrative safeguard for visibility and verification, not an accusation of wrongdoing.
+      </div>
+    </div>
+  </div>
+<% } %>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2.5rem;">
+  <!-- Left column: Documents & Audit Trail -->
+  <div>
+    <!-- Documents & Receipts Card -->
+    <div class="card">
+      <div class="card-header">
+        <h3 style="font-size: 1.15rem;">Attached Receipts & Vouchers</h3>
+        <% if (isStaff) { %>
+          <button class="btn btn-sm btn-secondary" onclick="document.getElementById('uploadForm').style.display='block'">+ Attach Document</button>
+        <% } %>
+      </div>
+
+      <% if (isStaff) { %>
+        <!-- Hidden upload form for staff -->
+        <div id="uploadForm" style="display: none; background: var(--surface-alt); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+          <form action="/admin/expenditures/<%= expenditure.id %>/upload" method="POST" enctype="multipart/form-data">
+            <% if (typeof csrfToken !== 'undefined') { %>
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <% } %>
+            <div class="form-group">
+              <label class="form-label" style="font-size: 0.8rem;">Document Type</label>
+              <select name="type" class="form-control" style="font-size: 0.85rem;">
+                <option value="invoice">Vendor Invoice / Bill</option>
+                <option value="receipt">Payment Receipt</option>
+                <option value="approval_letter">Administrative Approval Memo</option>
+                <option value="other">Other Supporting Document</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size: 0.8rem;">File (PDF, JPG, PNG &le; 5MB)</label>
+              <input type="file" name="document" class="form-control" accept=".pdf,.jpg,.jpeg,.png" required>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="submit" class="btn btn-sm btn-primary">Upload</button>
+              <button type="button" class="btn btn-sm btn-secondary" onclick="document.getElementById('uploadForm').style.display='none'">Cancel</button>
+            </div>
+          </form>
+        </div>
+      <% } %>
+
+      <% if (documents.length === 0) { %>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">
+          No digital vouchers attached yet. Original physical vouchers are cataloged in the college finance office archives.
+        </p>
+      <% } else { %>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <% documents.forEach(doc => { %>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border: 1px solid var(--border); border-radius: 0.5rem; background: var(--surface-alt);">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="font-size: 1.5rem;">📄</span>
+                <div>
+                  <div style="font-weight: 600; font-size: 0.9rem;"><%= doc.original_name || 'Voucher Document' %></div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">
+                    <%= doc.type.toUpperCase() %> &bull; <%= (doc.size ? (doc.size/1024).toFixed(1) + ' KB' : 'PDF') %> &bull; Uploaded on <%= new Date(doc.uploaded_at).toLocaleDateString() %>
+                  </div>
+                </div>
+              </div>
+              <a href="<%= doc.file_url %>" target="_blank" class="btn btn-sm btn-secondary">View Voucher</a>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Audit Trail Timeline Card -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3 style="font-size: 1.15rem;">Audit Trail & Governance Timeline</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">Immutable, tamper-evident record of actions taken on this expenditure</p>
+        </div>
+      </div>
+
+      <% if (auditTrail.length === 0) { %>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Initial registration logged.</p>
+      <% } else { %>
+        <div class="timeline">
+          <% auditTrail.forEach(log => { %>
+            <div class="timeline-item">
+              <div class="timeline-marker"></div>
+              <div class="timeline-content">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
+                  <strong style="text-transform: capitalize; color: var(--primary);">
+                    <%= log.action %>
+                  </strong>
+                  <span class="timeline-date"><%= new Date(log.created_at).toLocaleString() %></span>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">
+                  By: <strong><%= log.actor_name || 'System Engine' %></strong> (<%= (log.actor_role || 'automation').replace('_', ' ') %>)
+                </div>
+
+                <% if (log.after) { %>
+                  <div style="margin-top: 0.4rem; padding: 0.4rem 0.6rem; background: var(--surface-alt); border-radius: 0.25rem; font-family: monospace; font-size: 0.775rem;">
+                    <% if (typeof log.after === 'string') { %>
+                      <%= log.after %>
+                    <% } else { %>
+                      <%= JSON.stringify(log.after) %>
+                    <% } %>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Right column: Public Q&A Thread & Question Form -->
+  <div>
+    <!-- Public Q&A Card -->
+    <div class="card">
+      <div class="card-header">
+        <h3 style="font-size: 1.15rem;">Student Q&A & Clarifications</h3>
+      </div>
+
+      <div style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+        <% if (questions.length === 0) { %>
+          <p style="color: var(--text-muted); font-size: 0.875rem; text-align: center; padding: 1.5rem 0;">
+            No questions asked yet about this record. Have a clarification inquiry? Submit below.
+          </p>
+        <% } %>
+
+        <% questions.forEach(q => { %>
+          <div style="border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.85rem 1rem; background: var(--surface-alt);">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
+              <strong style="font-size: 0.85rem; color: var(--text-main);"><%= q.asker_name %> (Student)</strong>
+              <span style="font-size: 0.75rem; color: var(--text-dim);"><%= new Date(q.created_at).toLocaleDateString() %></span>
+            </div>
+            <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem; font-style: italic;">
+              "<%= q.text %>"
+            </p>
+
+            <% if (q.status === 'answered' && q.answer_text) { %>
+              <div style="background: #f0fdf4; border-left: 3px solid #16a34a; padding: 0.65rem 0.85rem; border-radius: 0.25rem; margin-top: 0.5rem;">
+                <div style="font-weight: 600; font-size: 0.8rem; color: #166534; margin-bottom: 0.25rem;">
+                  Reply by <%= q.answerer_name %> (<%= (q.answerer_role || 'Finance Staff').replace('_', ' ') %>):
+                </div>
+                <p style="font-size: 0.85rem; color: #14532d; margin: 0;">
+                  <%= q.answer_text %>
+                </p>
+                <% if (q.document_url) { %>
+                  <div style="margin-top: 0.4rem;">
+                    <a href="<%= q.document_url %>" target="_blank" style="font-size: 0.775rem; color: #15803d; font-weight: 600;">View Attached Reference &rarr;</a>
+                  </div>
+                <% } %>
+              </div>
+            <% } else { %>
+              <span class="badge badge-pending" style="font-size: 0.725rem;">Awaiting Finance Staff Clarification</span>
+            <% } %>
+          </div>
+        <% }) %>
+      </div>
+
+      <!-- Ask a Question Form -->
+      <div style="border-top: 1px solid var(--border); padding-top: 1.25rem;">
+        <h4 style="font-size: 0.95rem; margin-bottom: 0.5rem;">Ask a Question / Request Clarification</h4>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+          Inquiries promote constructive dialogue between students and college administration.
+        </p>
+
+        <% if (user) { %>
+          <form action="/expenditures/<%= expenditure.id %>/question" method="POST">
+            <% if (typeof csrfToken !== 'undefined') { %>
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <% } %>
+
+            <div class="form-group">
+              <label for="questionText" class="form-label" style="font-size: 0.8rem;">Your Question (Pre-filled courteous template)</label>
+              <textarea id="questionText" name="text" class="form-control" rows="3" required><%= questionTemplate %></textarea>
+              <div class="form-hint">You may edit the message above before sending.</div>
+            </div>
+
+            <button type="submit" class="btn btn-sm btn-primary" style="width: 100%;">
+              Submit Question to Finance Staff
+            </button>
+          </form>
+        <% } else { %>
+          <div style="text-align: center; padding: 1rem; background: var(--surface-alt); border-radius: 0.5rem;">
+            <p style="font-size: 0.85rem; margin-bottom: 0.5rem;">Please sign in to submit a clarification inquiry.</p>
+            <a href="/login" class="btn btn-sm btn-primary">Sign In</a>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

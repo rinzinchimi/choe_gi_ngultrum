@@ -1,0 +1,22 @@
+<%- include('partials/header') %>
+
+<div style="max-width: 520px; margin: 3rem auto; text-align: center;">
+  <div class="card" style="padding: 2.5rem 2rem;">
+    <div style="width: 4rem; height: 4rem; border-radius: 50%; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 1.25rem;">
+      ✉️
+    </div>
+
+    <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Check Your Email</h2>
+    <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+      A verification link has been sent to <strong><%= email %></strong>. Please click the link to confirm your college email and activate your account.
+    </p>
+
+    <div style="background: var(--surface-alt); padding: 1rem; border-radius: 0.5rem; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; text-align: left;">
+      💡 <strong>Development Mode:</strong> If SMTP is not configured, the verification link was logged directly to your application terminal console.
+    </div>
+
+    <a href="/login" class="btn btn-primary" style="width: 100%;">Return to Sign In</a>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

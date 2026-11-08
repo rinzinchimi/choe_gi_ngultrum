@@ -1,0 +1,70 @@
+<%- include('partials/header') %>
+
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.5rem;">
+    <div>
+      <h2 style="font-size: 1.6rem; margin-bottom: 0.25rem;">College Projects & Events</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Tracking dedicated allocations, active student club initiatives, and capital improvement works.
+      </p>
+    </div>
+    <span class="badge badge-approved" style="font-size: 0.85rem; padding: 0.35rem 0.75rem;">
+      12 Monitored Projects Active
+    </span>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;">
+  <% events.forEach(evt => { %>
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <h3 style="font-size: 1.1rem; color: var(--text-main);"><%= evt.name %></h3>
+          <span class="badge <%= evt.status === 'active' ? 'badge-approved' : 'badge-pending' %>">
+            <%= evt.status.toUpperCase() %>
+          </span>
+        </div>
+
+        <% if (evt.club_name) { %>
+          <div style="font-size: 0.8rem; color: var(--accent); font-weight: 500; margin-bottom: 0.75rem;">
+            🏛️ <%= evt.club_name %>
+          </div>
+        <% } else { %>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            🏢 Institutional Capital & Operations
+          </div>
+        <% } %>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.3rem;">
+          <span style="color: var(--text-muted);">Allocated Budget:</span>
+          <strong>Nu. <%= Number(evt.budget_amount).toLocaleString() %></strong>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.3rem;">
+          <span style="color: var(--text-muted);">Disbursed to Date:</span>
+          <span style="color: var(--primary); font-weight: 600;">Nu. <%= Number(evt.spent_total).toLocaleString() %></span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.75rem;">
+          <span style="color: var(--text-muted);">Remaining Funds:</span>
+          <span style="color: #16a34a; font-weight: 600;">Nu. <%= Number(evt.remaining_amount).toLocaleString() %></span>
+        </div>
+
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" style="width: <%= Math.min(100, evt.percent_spent) %>%;"></div>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-dim); text-align: right; margin-top: 0.25rem;">
+          <%= evt.percent_spent %>% utilized
+        </div>
+      </div>
+
+      <div style="margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px dashed var(--border);">
+        <a href="/expenditures?event_id=<%= evt.id %>" class="btn btn-sm btn-secondary" style="width: 100%;">
+          View Related Expenditures &rarr;
+        </a>
+      </div>
+    </div>
+  <% }) %>
+</div>
+
+<%- include('partials/footer') %>

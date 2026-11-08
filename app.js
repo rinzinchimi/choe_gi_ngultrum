@@ -1,0 +1,112 @@
+const express = require('express');
+const path = require('path');
+const session = require('express-session');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+require('dotenv').config();
+
+const { connectMongo } = require('./config/mongo');
+
+const app = express();
+
+// View engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Security headers with CSP tailored for Chart.js & Google Fonts
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
+        connectSrc: ["'self'"]
+      }
+    }
+  })
+);
+
+// Static assets
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// Session configuration
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'dev-secret-key-at-least-32-characters-long',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    }
+  })
+);
+
+// Global locals for views
+app.use((req, res, next) => {
+  res.locals.user = req.session.user || null;
+  res.locals.currentPath = req.path;
+  res.locals.query = req.query;
+  next();
+});
+
+// Rate limiting on sensitive endpoints (skip during automated tests)
+if (process.env.NODE_ENV !== 'test') {
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: 'Too many requests from this network address. Please try again after 15 minutes.'
+  });
+
+  app.use('/login', authLimiter);
+  app.use('/signup', authLimiter);
+  app.use('/forgot-password', authLimiter);
+  app.use('/api/questions', authLimiter);
+
+  // Initialize MongoDB connection asynchronously if enabled
+  connectMongo().catch(err => {
+    console.warn('Mongo initialization caught:', err.message);
+  });
+}
+
+// Routes
+app.use('/', require('./routes/index'));
+app.use('/api', require('./routes/api'));
+
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).render('about', {
+    title: '404 - Page Not Found',
+    page: 'error',
+    errorMessage: `The page at "${req.originalUrl}" could not be found.`,
+    status: 404
+  });
+});
+
+// 500 Error Handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled application error:', err);
+  if (res.headersSent) return next(err);
+
+  if (req.path.startsWith('/api/')) {
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+
+  res.status(500).render('about', {
+    title: '500 - Server Error',
+    page: 'error',
+    errorMessage: 'An unexpected server error occurred. Our technical staff has been notified.',
+    status: 500
+  });
+});
+
+module.exports = app;

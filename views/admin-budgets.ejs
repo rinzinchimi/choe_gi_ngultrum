@@ -1,0 +1,74 @@
+<%- include('partials/header') %>
+
+<div class="admin-layout">
+  <%- include('partials/admin-sidebar') %>
+
+  <div>
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap;">
+      <div>
+        <h2 style="font-size: 1.6rem; margin-bottom: 0.25rem;">Budget Allocations Management</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          Annual approved financial ceilings per college category and operational division.
+        </p>
+      </div>
+
+      <div style="font-size: 1.1rem; font-weight: 700; color: var(--primary);">
+        Total Allocation: Nu. <%= Number(totalAllocated).toLocaleString() %>
+      </div>
+    </div>
+
+    <% if (typeof success !== 'undefined' && success) { %>
+      <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 style="font-size: 1.15rem;">Fiscal Year 2025-2026 Category Budgets</h3>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Department / Committee</th>
+              <th style="text-align: right;">Allocated Amount</th>
+              <th style="text-align: center;">Modify Allocation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% budgets.forEach(b => { %>
+              <tr>
+                <td><strong><%= b.category_name %></strong></td>
+                <td><%= b.department %></td>
+                <td style="text-align: right; font-weight: 700; font-size: 1rem; color: var(--primary);">
+                  Nu. <%= Number(b.allocated_amount).toLocaleString() %>
+                </td>
+                <td style="text-align: center;">
+                  <% if (user.role === 'admin') { %>
+                    <form action="/admin/budgets" method="POST" style="display: inline-flex; gap: 0.5rem; align-items: center;">
+                      <% if (typeof csrfToken !== 'undefined') { %>
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <% } %>
+                      <input type="hidden" name="id" value="<%= b.id %>">
+                      <input type="number" step="1000" name="allocated_amount" class="form-control" style="width: 140px; padding: 0.35rem 0.5rem; font-size: 0.85rem;" value="<%= b.allocated_amount %>" required>
+                      <button type="submit" class="btn btn-sm btn-primary">Update</button>
+                    </form>
+                  <% } else { %>
+                    <span style="font-size: 0.8rem; color: var(--text-dim);">Admin only</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

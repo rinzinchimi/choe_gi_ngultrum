@@ -1,0 +1,92 @@
+<%- include('partials/header') %>
+
+<% if (typeof errorMessage !== 'undefined' && errorMessage) { %>
+  <!-- Error Display Mode -->
+  <div style="max-width: 600px; margin: 3rem auto; text-align: center;">
+    <div style="width: 4rem; height: 4rem; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; margin: 0 auto 1.25rem;">
+      ⚠️
+    </div>
+    <h2 style="margin-bottom: 0.75rem;"><%= typeof title !== 'undefined' ? title : 'Notice' %></h2>
+    <div class="alert alert-danger" style="text-align: left; margin-bottom: 1.5rem;">
+      <%= errorMessage %>
+    </div>
+    <div style="display: flex; gap: 0.75rem; justify-content: center;">
+      <a href="javascript:history.back()" class="btn btn-secondary">&larr; Go Back</a>
+      <a href="/" class="btn btn-primary">Return Home</a>
+    </div>
+  </div>
+<% } else { %>
+  <!-- Standard Institutional About Page -->
+  <div style="max-width: 900px; margin: 0 auto;">
+    <div style="margin-bottom: 2rem;">
+      <div style="color: var(--accent); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px;">About the Initiative</div>
+      <h2 style="font-size: 2rem; margin: 0.25rem 0 0.75rem;">Choe Gi Ngultrum <span class="dzongkha-text" style="font-weight: normal; font-size: 1.4rem;">(ཁྱོད་ཀྱི་དངུལ་ཀྲམ།)</span></h2>
+      <p style="color: var(--text-muted); font-size: 1.1rem; line-height: 1.6;">
+        "Your Money, Our Transparency." A dedicated platform for financial visibility, budget tracking, and constructive student dialogue across tertiary colleges in Bhutan.
+      </p>
+    </div>
+
+    <!-- Core Principles Card -->
+    <div class="card" style="border-left: 4px solid var(--accent); margin-bottom: 2rem;">
+      <h3 style="margin-bottom: 0.75rem; color: var(--primary);">Institutional Guiding Principles</h3>
+      <p style="font-size: 0.95rem; color: var(--text-main);">
+        In alignment with the Good Governance pillar of Bhutan's Gross National Happiness philosophy, Choe Gi Ngultrum operates under clear principles of mutual respect and institutional integrity:
+      </p>
+      <ul style="padding-left: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.925rem; color: var(--text-muted);">
+        <li>
+          <strong style="color: var(--text-main);">Visibility, not accusation:</strong> It is a tool for visibility and constructive review, not a guarantee against misuse.
+        </li>
+        <li>
+          <strong style="color: var(--text-main);">"Requires Review" is neutral:</strong> A "Requires Review" badge is an automated or precautionary checkpoint for administrative accuracy, NOT an accusation of impropriety.
+        </li>
+        <li>
+          <strong style="color: var(--text-main);">Constructive student inquiries:</strong> Student questions are intended for clarification, mutual understanding, and civic learning, never for confrontation.
+        </li>
+        <li>
+          <strong style="color: var(--text-main);">Calm and neutral tone:</strong> Respectful, measured language is maintained across all records, inquiries, and staff responses.
+        </li>
+      </ul>
+    </div>
+
+    <!-- Roles & Responsibilities -->
+    <div class="card" style="margin-bottom: 2rem;">
+      <h3 style="margin-bottom: 1.25rem;">Role-Based Governance (RBAC)</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
+        <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 0.5rem; background: var(--surface-alt);">
+          <h4 style="color: var(--primary); font-size: 1rem; margin-bottom: 0.35rem;">🎓 Student</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Views verified published records, searches categories and projects, asks clarification questions, and receives status notifications.</p>
+        </div>
+
+        <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 0.5rem; background: var(--surface-alt);">
+          <h4 style="color: var(--accent); font-size: 1rem; margin-bottom: 0.35rem;">⭐ Student Leader</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">All student privileges plus specialized oversight over respective club, association, and student event budget allocations.</p>
+        </div>
+
+        <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 0.5rem; background: var(--surface-alt);">
+          <h4 style="color: #0284c7; font-size: 1rem; margin-bottom: 0.35rem;">💼 Finance Officer</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Records expenditures, uploads verified invoices/receipts, monitors category budget balances, and answers student inquiries.</p>
+        </div>
+
+        <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 0.5rem; background: var(--surface-alt);">
+          <h4 style="color: #7c3aed; font-size: 1rem; margin-bottom: 0.35rem;">🛡️ Administrator</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Reviews verification queues, approves or rejects expenditure submissions with justification, manages annual budgets and user roles.</p>
+        </div>
+
+        <div style="padding: 1rem; border: 1px solid var(--border); border-radius: 0.5rem; background: var(--surface-alt);">
+          <h4 style="color: #059669; font-size: 1rem; margin-bottom: 0.35rem;">🔍 Internal Auditor</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Read-only oversight across all financial records, audit histories, and modification timelines for institutional compliance.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Closing motto -->
+    <div style="text-align: center; padding: 2rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: 0.75rem;">
+      <h3 style="color: var(--primary); font-size: 1.35rem; margin-bottom: 0.5rem;">"Your Money. Our Transparency. Our Accountability."</h3>
+      <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">
+        Empowering Bhutanese college communities through verifiable open data and structured civic participation.
+      </p>
+    </div>
+  </div>
+<% } %>
+
+<%- include('partials/footer') %>
