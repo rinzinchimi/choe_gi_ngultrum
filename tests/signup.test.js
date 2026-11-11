@@ -66,6 +66,12 @@ describe('User Registration & Verification Flow', () => {
     expect(user.verification_token).toBeNull();
     expect(user.verification_token_expires).toBeNull();
     expect(res.header.location).toContain('verified=true');
+
+    const loginRes = await request(app)
+      .post('/login')
+      .send({ email: 'newstudent@sherubtse.rub.edu.bt', password: 'Transparency@2026' });
+    expect(loginRes.status).toBe(302);
+    expect(loginRes.header.location).toBe('/dashboard');
   });
 
   it('POST /signup skips email verification but keeps role applications pending admin approval', async () => {

@@ -91,7 +91,7 @@ exports.postLogin = async (req, res) => {
       return res.render('login', {
         title: 'Login - Choe Gi Ngultrum',
         page: 'login',
-        error: 'Invalid credentials. Please verify your email and password.',
+        error: 'Email or password is incorrect.',
         email
       });
     }
@@ -101,7 +101,7 @@ exports.postLogin = async (req, res) => {
       return res.render('login', {
         title: 'Login - Choe Gi Ngultrum',
         page: 'login',
-        error: 'Invalid credentials. Please verify your email and password.',
+        error: 'Email or password is incorrect.',
         email
       });
     }
