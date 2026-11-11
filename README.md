@@ -26,7 +26,7 @@ If an account already exists for `ADMIN_EMAIL`, setup grants that account admini
 
 The root `render.yaml` defines a Node web service and PostgreSQL database. In the Render dashboard, choose **New → Blueprint**, connect this GitHub repository, and select the `master` branch. During setup, enter `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `GMAIL_USER`, and the complete `GMAIL_APP_PASSWORD` as secret values. Render generates `SESSION_SECRET`. The service applies the database schema before starting. After the first deploy, open the web service shell and run `npm run setup:admin` once, then open the service's public `onrender.com` URL. Verification links use Render's public hostname unless `APP_BASE_URL` is set explicitly.
 
-The included Blueprint uses Render's free plans to avoid creating billable resources automatically. Free instances may sleep, and free Postgres has a limited lifetime; choose a paid database plan in Render if the application needs durable production data. Uploaded files are stored on the service filesystem, so use persistent storage or external object storage before relying on uploads in production.
+The included Blueprint uses Render's free plans to avoid creating billable resources automatically. It is for preview/testing only: Render Free web services block outbound SMTP on port 587, so Gmail verification email cannot work on that plan. Use a paid web plan for Gmail SMTP. Free Postgres expires after 30 days, so use a paid database for durable account data. Uploaded files are stored on the service filesystem, so use persistent storage or external object storage before relying on uploads in production.
 
 ---
 
