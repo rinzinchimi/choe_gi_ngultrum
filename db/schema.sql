@@ -70,6 +70,26 @@ DO $$ BEGIN
   END IF;
 END $$;
 
+-- Existing databases keep their original role CHECK when users is not recreated.
+-- Replace role-only CHECK constraints so newly supported auditor accounts can be approved.
+DO $$
+DECLARE role_constraint RECORD;
+BEGIN
+  FOR role_constraint IN
+    SELECT conname
+    FROM pg_constraint
+    WHERE conrelid = 'users'::regclass
+      AND contype = 'c'
+      AND pg_get_constraintdef(oid) ~* '\mrole\M'
+      AND pg_get_constraintdef(oid) !~* '\m(requested_role|approval_status)\M'
+  LOOP
+    EXECUTE format('ALTER TABLE users DROP CONSTRAINT %I', role_constraint.conname);
+  END LOOP;
+
+  ALTER TABLE users ADD CONSTRAINT users_role_check
+    CHECK (role IN ('student','student_leader','finance_officer','admin','auditor'));
+END $$;
+
 CREATE TABLE IF NOT EXISTS events (
   id             SERIAL PRIMARY KEY,
   name           TEXT NOT NULL,

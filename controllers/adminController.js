@@ -442,7 +442,8 @@ exports.postApproveRoleApplication = async (req, res) => {
         ? 'This role application could not be found. Refresh the list and try again.'
         : 'Approval failed because of a server or database error. Check the application logs and try again.';
     if (!['CLUB_REQUIRED', 'INVALID_CLUB', 'SELF_APPROVAL', 'APPLICATION_NOT_PENDING', 'ROLE_APPLICATION_NOT_FOUND'].includes(err.code)) {
-      console.error('Role application approval failed:', err.code || 'DATABASE_ERROR');
+      const detail = String(err.message || 'Unknown database error').replace(/[\r\n\t]+/g, ' ').slice(0, 300);
+      console.error('Role application approval failed:', err.code || 'DATABASE_ERROR', detail);
     }
     return res.redirect('/admin/role-approvals?error=' + encodeURIComponent(message));
   }
@@ -484,7 +485,8 @@ exports.postRejectRoleApplication = async (req, res) => {
         ? 'This role application could not be found. Refresh the list and try again.'
         : 'Rejection failed because of a server or database error. Check the application logs and try again.';
     if (!['SELF_APPROVAL', 'APPLICATION_NOT_PENDING', 'ROLE_APPLICATION_NOT_FOUND'].includes(err.code)) {
-      console.error('Role application rejection failed:', err.code || 'DATABASE_ERROR');
+      const detail = String(err.message || 'Unknown database error').replace(/[\r\n\t]+/g, ' ').slice(0, 300);
+      console.error('Role application rejection failed:', err.code || 'DATABASE_ERROR', detail);
     }
     return res.redirect('/admin/role-approvals?error=' + encodeURIComponent(message));
   }
