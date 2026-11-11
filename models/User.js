@@ -256,7 +256,7 @@ const User = {
          SET role = requested_role, approval_status = 'approved',
              approved_by = $2, approved_at = NOW(),
              reviewed_by = $2, reviewed_at = NOW(), rejection_reason = NULL,
-             club_id = CASE WHEN requested_role = 'student_leader' THEN $3 ELSE NULL END,
+             club_id = CASE WHEN requested_role = 'student_leader' THEN $3::integer ELSE NULL::integer END,
              is_verified = true, verification_token = NULL, verification_token_expires = NULL
          WHERE id = $1 AND approval_status = 'pending'
          RETURNING id, name, email, role, requested_role, approval_status`,
