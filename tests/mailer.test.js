@@ -1,4 +1,4 @@
-const { createMailer, getSmtpConfig, normalizeAppPassword } = require('../config/mailer');
+const { createMailer, getSmtpConfig, getBaseUrl, normalizeAppPassword } = require('../config/mailer');
 
 const validEnvironment = overrides => ({
   NODE_ENV: 'development',
@@ -9,6 +9,13 @@ const validEnvironment = overrides => ({
 });
 
 describe('Gmail verification mailer', () => {
+  it('uses the public Render hostname for links when APP_BASE_URL is not set', () => {
+    expect(getBaseUrl({ RENDER_EXTERNAL_HOSTNAME: 'choe-gi-ngultrum.onrender.com' }))
+      .toBe('https://choe-gi-ngultrum.onrender.com');
+    expect(getBaseUrl({ APP_BASE_URL: 'https://portal.example.edu', RENDER_EXTERNAL_HOSTNAME: 'ignored.onrender.com' }))
+      .toBe('https://portal.example.edu');
+  });
+
   it('uses Gmail SMTP STARTTLS and removes grouping spaces without truncating', () => {
     const smtp = getSmtpConfig(validEnvironment());
 

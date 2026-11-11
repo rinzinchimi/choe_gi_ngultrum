@@ -22,6 +22,12 @@ npm.cmd start
 
 If an account already exists for `ADMIN_EMAIL`, setup grants that account administrator role and keeps its current password. Otherwise, setup creates it using `ADMIN_PASSWORD`. Public signup can request Student Leader or Auditor access; those accounts must verify their email and await approval under **Admin → Role Approvals**. Existing unverified accounts can request a fresh link at `/resend-verification`.
 
+## Deploying on Render
+
+The root `render.yaml` defines a Node web service and PostgreSQL database. In the Render dashboard, choose **New → Blueprint**, connect this GitHub repository, and select the `master` branch. During setup, enter `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `GMAIL_USER`, and the complete `GMAIL_APP_PASSWORD` as secret values. Render generates `SESSION_SECRET`. The service applies the database schema before starting. After the first deploy, open the web service shell and run `npm run setup:admin` once, then open the service's public `onrender.com` URL. Verification links use Render's public hostname unless `APP_BASE_URL` is set explicitly.
+
+The included Blueprint uses Render's free plans to avoid creating billable resources automatically. Free instances may sleep, and free Postgres has a limited lifetime; choose a paid database plan in Render if the application needs durable production data. Uploaded files are stored on the service filesystem, so use persistent storage or external object storage before relying on uploads in production.
+
 ---
 
 ## 🏛️ Institutional Principles

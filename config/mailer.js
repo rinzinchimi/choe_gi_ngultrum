@@ -54,7 +54,10 @@ function getSmtpConfig(env = process.env) {
 }
 
 function getBaseUrl(env = process.env) {
-  const configured = String(env.APP_BASE_URL || 'http://localhost:3000').trim();
+  const renderHostname = String(env.RENDER_EXTERNAL_HOSTNAME || '').trim();
+  const configured = String(
+    env.APP_BASE_URL || (renderHostname ? `https://${renderHostname}` : 'http://localhost:3000')
+  ).trim();
   try {
     const url = new URL(configured);
     if (!['http:', 'https:'].includes(url.protocol)) throw new Error('unsupported protocol');
@@ -284,6 +287,7 @@ module.exports = {
   createMailer,
   getSmtpConfig,
   normalizeAppPassword,
+  getBaseUrl,
   SMTP_HOST,
   SMTP_PORT,
   SMTP_CONNECTION_TIMEOUT_MS,
