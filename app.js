@@ -39,19 +39,37 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Session configuration
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'dev-secret-key-at-least-32-characters-long',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 24 * 60 * 60 * 1000 // 1 day
-    }
-  })
-);
+const sessionOptions = {
+  secret: process.env.SESSION_SECRET || 'dev-secret-key-at-least-32-characters-long',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 1 day
+  }
+};
+
+if (process.env.NODE_ENV === 'production') {
+  const PgSession = require('connect-pg-simple')(session);
+  const { Pool } = require('pg');
+  const sessionDbConfig = process.env.DATABASE_URL
+    ? { connectionString: process.env.DATABASE_URL }
+    : {
+        host: process.env.DB_HOST,
+        port: Number(process.env.DB_PORT) || 5432,
+        database: process.env.DB_NAME,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASS
+      };
+  sessionOptions.store = new PgSession({
+    pool: new Pool({ ...sessionDbConfig, max: 5 }),
+    createTableIfMissing: true
+  });
+}
+
+app.use(session(sessionOptions));
 
 // Global locals for views
 app.use((req, res, next) => {
