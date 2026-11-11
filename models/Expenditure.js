@@ -37,6 +37,7 @@ const Expenditure = {
     clubId = null,
     eventId = null,
     createdBy = null,
+    createdByOrClubId = false,
     startDate = null,
     endDate = null,
     minAmount = null,
@@ -68,7 +69,11 @@ const Expenditure = {
       params.push(department);
     }
 
-    if (clubId) {
+    if (createdByOrClubId) {
+      where += ` AND (e.created_by = $${idx++} OR ($${idx}::int IS NOT NULL AND (e.club_id = $${idx} OR e.event_id IN (SELECT id FROM events WHERE club_id = $${idx}))))`;
+      params.push(parseInt(createdBy, 10), clubId ? parseInt(clubId, 10) : null);
+      idx++;
+    } else if (clubId) {
       where += ` AND e.club_id = $${idx++}`;
       params.push(parseInt(clubId, 10));
     }
@@ -78,7 +83,7 @@ const Expenditure = {
       params.push(parseInt(eventId, 10));
     }
 
-    if (createdBy) {
+    if (!createdByOrClubId && createdBy) {
       where += ` AND e.created_by = $${idx++}`;
       params.push(parseInt(createdBy, 10));
     }
@@ -167,6 +172,24 @@ const Expenditure = {
    */
   async create({ spent_on, purpose, category_id, department = 'General', club_id = null, event_id = null, amount, created_by }) {
     return db.tx(async t => {
+      const creator = await t.oneOrNone('SELECT role, club_id FROM users WHERE id = $1 FOR SHARE', [created_by]);
+      if (!creator) throw Object.assign(new Error('Authenticated user was not found.'), { code: 'CREATOR_NOT_FOUND' });
+      if (creator.role === 'student_leader') {
+        if (!creator.club_id) {
+          throw Object.assign(new Error('A club assignment is required before recording expenses.'), { code: 'LEADER_CLUB_NOT_ASSIGNED' });
+        }
+        if (club_id && Number(club_id) !== Number(creator.club_id)) {
+          throw Object.assign(new Error('Student Leaders may only create records for their assigned club.'), { code: 'LEADER_SCOPE_DENIED' });
+        }
+        if (event_id) {
+          const event = await t.oneOrNone('SELECT id FROM events WHERE id = $1 AND club_id = $2', [event_id, creator.club_id]);
+          if (!event) {
+            throw Object.assign(new Error('Student Leaders may only select projects assigned to their club.'), { code: 'LEADER_SCOPE_DENIED' });
+          }
+        }
+        club_id = creator.club_id;
+      }
+
       // 1. Insert record as pending
       const exp = await t.one(
         `INSERT INTO expenditures (spent_on, purpose, category_id, department, club_id, event_id, amount, status, is_published, created_by, created_at, updated_at)

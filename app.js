@@ -67,9 +67,18 @@ if (process.env.NODE_ENV !== 'test') {
     message: 'Too many requests from this network address. Please try again after 15 minutes.'
   });
 
+  const verificationResendLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: 'Too many verification requests. Please wait before trying again.'
+  });
+
   app.use('/login', authLimiter);
   app.use('/signup', authLimiter);
   app.use('/forgot-password', authLimiter);
+  app.post('/resend-verification', verificationResendLimiter);
   app.use('/api/questions', authLimiter);
 
   // Initialize MongoDB connection asynchronously if enabled

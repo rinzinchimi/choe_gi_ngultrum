@@ -1,0 +1,45 @@
+<%- include('partials/header') %>
+
+<div style="margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+  <div>
+    <h2 style="font-size:1.6rem;margin-bottom:0.25rem;">Student Leader Dashboard</h2>
+    <p style="color:var(--text-muted);margin:0;">Welcome, <strong><%= user.name %></strong><% if (clubName) { %> · <%= clubName %><% } %></p>
+    <p style="color:var(--text-muted);font-size:0.85rem;margin-top:0.4rem;">Your access is limited to your own submissions and records connected to your assigned club.</p>
+  </div>
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+    <a href="/admin/expenditures#new" class="btn btn-primary">Record Expense</a>
+    <a href="/notifications" class="btn btn-secondary">Notifications<% if (unreadNotifications > 0) { %> (<%= unreadNotifications %>)<% } %></a>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card accent"><div class="stat-title">Accessible Expenditure Records</div><div class="stat-value"><%= total %></div><div class="stat-meta">Submitted by you or associated with your club</div></div>
+  <div class="stat-card info"><div class="stat-title">Assigned Club</div><div class="stat-value" style="font-size:1.2rem;"><%= clubName || 'Not assigned' %></div><div class="stat-meta">Contact an administrator to update your assignment</div></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div><h3 style="font-size:1.1rem;margin:0;">Your Club and Project Records</h3><p style="color:var(--text-muted);font-size:0.8rem;margin:0.3rem 0 0;">Only records within your authorized scope are shown.</p></div>
+    <a href="/admin/expenditures" class="btn btn-sm btn-secondary">Manage Submissions</a>
+  </div>
+  <% if (expenditures.length === 0) { %>
+    <p style="color:var(--text-muted);">No records are available in your scope yet.</p>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Purpose</th><th>Department</th><th>Club / Project</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>
+          <% expenditures.forEach(item => { %>
+            <tr>
+              <td><%= item.spent_on %></td><td><strong><%= item.purpose %></strong></td><td><%= item.department || '—' %></td>
+              <td><%= item.club_name || item.event_name || '—' %></td><td>Nu. <%= Number(item.amount).toLocaleString() %></td>
+              <td><span class="badge badge-<%= item.status %>"><%= item.status.replace('_', ' ') %></span></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

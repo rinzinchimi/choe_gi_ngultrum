@@ -12,7 +12,9 @@ describe('User Registration & Verification Flow', () => {
   it('GET /signup returns 200 with registration form', async () => {
     const res = await request(app).get('/signup');
     expect(res.status).toBe(200);
-    expect(res.text).toContain('Student Registration');
+    expect(res.text).toContain('Create an Account');
+    expect(res.text).toContain('Student Leader Applicant');
+    expect(res.text).toContain('Auditor Applicant');
   });
 
   it('POST /signup fails when required fields are missing', async () => {
@@ -61,9 +63,32 @@ describe('User Registration & Verification Flow', () => {
     expect(user.role).toBe('student');
     expect(user.is_verified).toBe(false);
     expect(user.verification_token).toBeDefined();
+    expect(user.verification_token_expires.getTime()).toBeGreaterThan(Date.now());
 
-    // Test email verification endpoint
-    const verifyRes = await request(app).get(`/verify/${user.verification_token}`);
+    const originalToken = user.verification_token;
+    await db.none(
+      `UPDATE users SET verification_email_last_sent_at = NOW() - INTERVAL '2 minutes'
+       WHERE id = $1`,
+      [user.id]
+    );
+
+    // Existing unverified accounts can request a fresh link without registering again.
+    const resendRes = await request(app)
+      .post('/resend-verification')
+      .send({ email: user.email, password: 'Transparency@2026' });
+    expect(resendRes.status).toBe(200);
+    expect(resendRes.text).toContain('Verify Account');
+    expect(resendRes.text).toContain('development-only link');
+
+    const resentUser = await db.one('SELECT * FROM users WHERE id = $1', [user.id]);
+    expect(resentUser.verification_token).not.toBe(originalToken);
+    expect(resentUser.verification_token_expires.getTime()).toBeGreaterThan(Date.now());
+
+    // Replaced tokens cannot be reused; the fresh token verifies the account.
+    const oldVerifyRes = await request(app).get(`/verify/${originalToken}`);
+    expect(oldVerifyRes.status).toBe(400);
+
+    const verifyRes = await request(app).get(`/verify/${resentUser.verification_token}`);
     expect(verifyRes.status).toBe(200);
     expect(verifyRes.text).toContain('Email Verified Successfully');
 

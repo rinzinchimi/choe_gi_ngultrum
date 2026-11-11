@@ -24,13 +24,51 @@ CREATE TABLE IF NOT EXISTS users (
   role                 TEXT NOT NULL DEFAULT 'student'
                          CHECK (role IN ('student','student_leader','finance_officer','admin','auditor')),
   is_verified          BOOLEAN NOT NULL DEFAULT false,
+  requested_role       TEXT CHECK (requested_role IS NULL OR requested_role IN ('student_leader','auditor')),
+  approval_status      TEXT NOT NULL DEFAULT 'approved'
+                         CHECK (approval_status IN ('pending','approved','rejected','suspended')),
   verification_token   TEXT,
+  verification_token_expires TIMESTAMPTZ,
+  verification_email_last_sent_at TIMESTAMPTZ,
+  institution_id       TEXT,
+  designation          TEXT,
+  approved_by          INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  approved_at          TIMESTAMPTZ,
+  reviewed_by          INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at          TIMESTAMPTZ,
+  rejection_reason     TEXT,
   reset_token          TEXT,
   reset_token_expires  TIMESTAMPTZ,
   department           TEXT,
   club_id              INTEGER REFERENCES clubs(id) ON DELETE SET NULL,
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Additions for databases created before expiring verification links/resends.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_expires TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_email_last_sent_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS requested_role TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS approval_status TEXT NOT NULL DEFAULT 'approved';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS institution_id TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS designation TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+UPDATE users
+SET verification_token_expires = NOW() + INTERVAL '24 hours'
+WHERE verification_token IS NOT NULL AND verification_token_expires IS NULL;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_requested_role_check') THEN
+    ALTER TABLE users ADD CONSTRAINT users_requested_role_check
+      CHECK (requested_role IS NULL OR requested_role IN ('student_leader','auditor'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_approval_status_check') THEN
+    ALTER TABLE users ADD CONSTRAINT users_approval_status_check
+      CHECK (approval_status IN ('pending','approved','rejected','suspended'));
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS events (
   id             SERIAL PRIMARY KEY,
@@ -91,12 +129,17 @@ CREATE TABLE IF NOT EXISTS audit_log (
   entity_type  TEXT NOT NULL,
   entity_id    INTEGER NOT NULL,
   action       TEXT NOT NULL
-                 CHECK (action IN ('created', 'edited', 'flagged', 'approved', 'rejected', 'published')),
+                 CHECK (action IN ('created', 'edited', 'flagged', 'approved', 'rejected', 'published', 'role_updated')),
   actor_id     INTEGER REFERENCES users(id),
   before       JSONB,
   after        JSONB,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Extend the existing audit action allowlist for auditable user role changes.
+ALTER TABLE audit_log DROP CONSTRAINT IF EXISTS audit_log_action_check;
+ALTER TABLE audit_log ADD CONSTRAINT audit_log_action_check
+  CHECK (action IN ('created', 'edited', 'flagged', 'approved', 'rejected', 'published', 'role_updated'));
 
 CREATE TABLE IF NOT EXISTS questions (
   id              SERIAL PRIMARY KEY,
@@ -144,6 +187,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_actor              ON audit_log (actor_id);
 CREATE INDEX IF NOT EXISTS idx_questions_expenditure    ON questions (expenditure_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user       ON notifications (user_id, read_at);
 CREATE INDEX IF NOT EXISTS idx_review_flags_expenditure ON review_flags (expenditure_id);
+CREATE INDEX IF NOT EXISTS idx_users_role_applications ON users (approval_status, requested_role, is_verified);
 
 -- ---------------------------------------------------------------------------
 -- Append-only trigger for audit_log

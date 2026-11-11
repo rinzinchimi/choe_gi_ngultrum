@@ -52,20 +52,18 @@
                 </td>
                 <td>
                   <span class="user-badge" style="font-size: 0.75rem;"><%= u.role.replace('_', ' ') %></span>
+                  <div style="font-size:0.75rem;color:var(--text-muted);"><%= u.is_verified ? 'Email Verified' : 'Email Not Verified' %> · <%= u.approval_status.replace('_', ' ') %></div>
                 </td>
                 <td style="text-align: center;">
                   <form action="/admin/users/<%= u.id %>/role" method="POST" style="display: inline-flex; gap: 0.5rem; align-items: center;">
                     <% if (typeof csrfToken !== 'undefined') { %>
                       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                     <% } %>
-                    <select name="role" class="form-control" style="font-size: 0.8rem; padding: 0.25rem 0.5rem; width: 140px;">
+                    <select name="role" class="form-control" style="font-size: 0.8rem; padding: 0.25rem 0.5rem; width: 140px;" <%= (u.role === 'admin' || u.id === user.id || u.requested_role) ? 'disabled' : '' %>>
                       <option value="student" <%= u.role === 'student' ? 'selected' : '' %>>Student</option>
-                      <option value="student_leader" <%= u.role === 'student_leader' ? 'selected' : '' %>>Student Leader</option>
                       <option value="finance_officer" <%= u.role === 'finance_officer' ? 'selected' : '' %>>Finance Officer</option>
-                      <option value="admin" <%= u.role === 'admin' ? 'selected' : '' %>>Administrator</option>
-                      <option value="auditor" <%= u.role === 'auditor' ? 'selected' : '' %>>Auditor</option>
                     </select>
-                    <button type="submit" class="btn btn-sm btn-primary">Update</button>
+                    <button type="submit" class="btn btn-sm btn-primary" <%= (u.role === 'admin' || u.id === user.id || u.requested_role) ? 'disabled' : '' %>>Update</button>
                   </form>
                 </td>
               </tr>

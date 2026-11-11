@@ -3,8 +3,8 @@
 <div style="max-width: 520px; margin: 2rem auto;">
   <div class="card" style="padding: 2rem;">
     <div style="text-align: center; margin-bottom: 1.75rem;">
-      <h2 style="font-size: 1.5rem; margin-bottom: 0.25rem;">Student Registration</h2>
-      <p style="color: var(--text-muted); font-size: 0.875rem;">Create your student account to inspect and review college expenditures</p>
+      <h2 style="font-size: 1.5rem; margin-bottom: 0.25rem;">Create an Account</h2>
+      <p style="color: var(--text-muted); font-size: 0.875rem;">Register as a student or apply for a verified institutional role.</p>
     </div>
 
     <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
@@ -34,6 +34,26 @@
       </div>
 
       <div class="form-group">
+        <label for="requestedRole" class="form-label">Account Type</label>
+        <select id="requestedRole" name="requestedRole" class="form-control" required>
+          <option value="student" <%= !formData.requestedRole || formData.requestedRole === 'student' ? 'selected' : '' %>>Student</option>
+          <option value="student_leader" <%= formData.requestedRole === 'student_leader' ? 'selected' : '' %>>Student Leader Applicant</option>
+          <option value="auditor" <%= formData.requestedRole === 'auditor' ? 'selected' : '' %>>Auditor Applicant</option>
+        </select>
+        <div class="form-hint">Leader and Auditor access requires email verification and administrator approval.</div>
+      </div>
+
+      <div class="form-group" id="institution-id-field" style="display:none;">
+        <label for="institutionId" class="form-label" id="institution-id-label">Student ID</label>
+        <input type="text" id="institutionId" name="institutionId" class="form-control" maxlength="100" value="<%= formData.institutionId || '' %>">
+      </div>
+
+      <div class="form-group" id="designation-field" style="display:none;">
+        <label for="designation" class="form-label">Leadership Position</label>
+        <input type="text" id="designation" name="designation" class="form-control" maxlength="100" placeholder="e.g. Club President or Treasurer" value="<%= formData.designation || '' %>">
+      </div>
+
+      <div class="form-group">
         <label for="department" class="form-label">Academic Department (Optional)</label>
         <input type="text" id="department" name="department" class="form-control" placeholder="e.g. Computer Science, Arts, Sciences" value="<%= typeof formData !== 'undefined' && formData.department ? formData.department : '' %>">
       </div>
@@ -50,19 +70,42 @@
       </div>
 
       <div style="background: var(--surface-alt); padding: 0.85rem; border-radius: 0.5rem; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-        🔒 Self-registration creates a verified <strong>Student</strong> account. Role elevation (such as Student Leader or Club Executive) is administered by college authorities.
+        Self-registration never grants administrator access. Student Leader and Auditor applicants must verify email and receive administrator approval.
       </div>
 
       <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">
-        Register Student Account
+        Create Account
       </button>
     </form>
 
     <div style="margin-top: 1.5rem; text-align: center; font-size: 0.875rem; color: var(--text-muted);">
       Already have an account? <a href="/login" style="font-weight: 600;">Sign In</a>
+      <div style="margin-top: 0.5rem;"><a href="/resend-verification" style="font-weight: 600;">Resend verification email</a></div>
     </div>
   </div>
 </div>
+
+<script>
+  const requestedRole = document.getElementById('requestedRole');
+  const institutionIdField = document.getElementById('institution-id-field');
+  const institutionId = document.getElementById('institutionId');
+  const institutionIdLabel = document.getElementById('institution-id-label');
+  const designationField = document.getElementById('designation-field');
+  const designation = document.getElementById('designation');
+
+  function updateApplicationFields() {
+    const role = requestedRole.value;
+    const needsId = role === 'student_leader' || role === 'auditor';
+    institutionIdField.style.display = needsId ? 'block' : 'none';
+    institutionId.required = needsId;
+    institutionIdLabel.textContent = role === 'auditor' ? 'Staff ID' : 'Student ID';
+    designationField.style.display = role === 'student_leader' ? 'block' : 'none';
+    designation.required = role === 'student_leader';
+  }
+
+  requestedRole.addEventListener('change', updateApplicationFields);
+  updateApplicationFields();
+</script>
 
 <%- include('partials/footer') %>
 

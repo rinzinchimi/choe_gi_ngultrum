@@ -1,0 +1,37 @@
+<%- include('partials/header') %>
+
+<div style="margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+  <div>
+    <h2 style="font-size:1.6rem;margin-bottom:0.25rem;">Auditor Dashboard</h2>
+    <p style="color:var(--text-muted);margin:0;">Welcome, <strong><%= user.name %></strong>. Read-only audit and financial oversight.</p>
+  </div>
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+    <a href="/audit-log" class="btn btn-primary">Open Audit Log</a>
+    <a href="/admin/reports" class="btn btn-secondary">Financial Reports</a>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card accent"><div class="stat-title">Audit Events</div><div class="stat-value"><%= auditCount %></div><div class="stat-meta">Append-only audit history</div></div>
+  <div class="stat-card success"><div class="stat-title">Verified Published Spend</div><div class="stat-value">Nu. <%= Number(stats.totalSpent).toLocaleString() %></div><div class="stat-meta">Published financial records</div></div>
+  <div class="stat-card info"><div class="stat-title">Remaining Funds</div><div class="stat-value">Nu. <%= Number(stats.remaining).toLocaleString() %></div><div class="stat-meta">Current budget summary</div></div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h3 style="font-size:1.1rem;margin:0;">Recent Audit Activity</h3><a href="/audit-log">View complete trail →</a></div>
+  <% if (recentAudit.length === 0) { %>
+    <p style="color:var(--text-muted);">No audit activity has been recorded.</p>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead><tr><th>Time</th><th>Action</th><th>Entity</th><th>Actor</th></tr></thead>
+        <tbody><% recentAudit.forEach(entry => { %><tr>
+          <td><%= new Date(entry.created_at).toLocaleString() %></td><td><%= entry.action %></td>
+          <td><%= entry.entity_type %> #<%= entry.entity_id %></td><td><%= entry.actor_name || 'System' %></td>
+        </tr><% }) %></tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

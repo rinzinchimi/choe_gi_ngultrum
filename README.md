@@ -6,6 +6,22 @@ A full-stack financial transparency and expenditure-tracking web platform built 
 
 Finance officers log verified expenditure records and upload digital vouchers. Administrators review, approve, and publish transactions to an immutable ledger. Students view itemized spending, inspect audit trails, search projects, and submit respectful clarification inquiries answered directly by finance staff.
 
+## Account setup and role applications
+
+Copy `.env.example` to `.env` and configure `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`, `SESSION_SECRET`, `APP_BASE_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `GMAIL_USER`, and `GMAIL_APP_PASSWORD`. Keep `.env` private and never commit it. `APP_BASE_URL` must be reachable by the person opening verification links (for another device on the same network, use the server's reachable IP instead of `localhost`).
+
+Enable 2-Step Verification on the Gmail account, create an App Password in Google Account security settings, then put the complete 16-character value in `GMAIL_APP_PASSWORD`. Spaces shown by Google may be included; the app removes ordinary spaces. Do not use your regular Gmail password.
+
+Apply the schema and provision the one configured administrator account from PowerShell:
+
+```powershell
+npm.cmd run migrate
+npm.cmd run setup:admin
+npm.cmd start
+```
+
+If an account already exists for `ADMIN_EMAIL`, setup grants that account administrator role and keeps its current password. Otherwise, setup creates it using `ADMIN_PASSWORD`. Public signup can request Student Leader or Auditor access; those accounts must verify their email and await approval under **Admin → Role Approvals**. Existing unverified accounts can request a fresh link at `/resend-verification`.
+
 ---
 
 ## 🏛️ Institutional Principles

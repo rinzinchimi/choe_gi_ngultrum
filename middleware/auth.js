@@ -1,20 +1,85 @@
 /**
  * Authentication and Role-Based Access Control (RBAC) Middleware
  */
+const User = require('../models/User');
 
-function requireAuth(req, res, next) {
-  if (req.session && req.session.user) {
+async function getCurrentUser(req) {
+  if (req.authenticatedUser) return req.authenticatedUser;
+  if (!req.session || !req.session.user) return null;
+
+  const user = await User.findById(req.session.user.id);
+  if (!user) return null;
+
+  // Refresh authorization facts from the database on every protected request;
+  // do not trust a role stored in an old or modified session.
+  Object.assign(req.session.user, {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    is_verified: user.is_verified,
+    requested_role: user.requested_role,
+    approval_status: user.approval_status,
+    department: user.department,
+    club_id: user.club_id,
+    club_name: user.club_name,
+    institution_id: user.institution_id,
+    designation: user.designation
+  });
+  req.authenticatedUser = user;
+  return user;
+}
+
+function accountAccessError(user) {
+  if (!user.is_verified) return 'Verify your email before using protected account features.';
+  if (user.approval_status === 'pending') return 'Your email is verified. Your role application is waiting for administrator approval.';
+  if (user.approval_status === 'rejected') return `Your role application was rejected${user.rejection_reason ? `: ${user.rejection_reason}` : '.'}`;
+  if (user.approval_status === 'suspended') return 'This account is suspended. Contact the administrator for assistance.';
+  if (user.approval_status !== 'approved') return 'This account is not approved for access.';
+  return null;
+}
+
+function isConfiguredAdministrator(user) {
+  const configuredEmail = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+  return Boolean(configuredEmail && user.role === 'admin' && user.email.toLowerCase() === configuredEmail);
+}
+
+function renderForbidden(res, message) {
+  return res.status(403).render('about', {
+    title: '403 Forbidden - Access Restricted',
+    page: 'error',
+    errorMessage: message,
+    status: 403
+  });
+}
+
+async function requireAuth(req, res, next) {
+  if (!req.session || !req.session.user) {
+    if (req.originalUrl && req.method === 'GET' && !req.originalUrl.startsWith('/api')) {
+      req.session.returnTo = req.originalUrl;
+    }
+    return res.redirect('/login');
+  }
+
+  try {
+    const user = await getCurrentUser(req);
+    if (!user) {
+      delete req.session.user;
+      return res.redirect('/login');
+    }
+    const blocked = accountAccessError(user);
+    if (blocked) return renderForbidden(res, blocked);
+    if (user.role === 'admin' && !isConfiguredAdministrator(user)) {
+      return renderForbidden(res, 'Administrator access is reserved for the account configured by ADMIN_EMAIL.');
+    }
     return next();
+  } catch (error) {
+    return next(error);
   }
-  // Store return URL for redirect after login
-  if (req.originalUrl && req.method === 'GET' && !req.originalUrl.startsWith('/api')) {
-    req.session.returnTo = req.originalUrl;
-  }
-  return res.redirect('/login');
 }
 
 function requireRole(...allowedRoles) {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     if (!req.session || !req.session.user) {
       if (req.originalUrl && req.method === 'GET' && !req.originalUrl.startsWith('/api')) {
         req.session.returnTo = req.originalUrl;
@@ -22,34 +87,52 @@ function requireRole(...allowedRoles) {
       return res.redirect('/login');
     }
 
-    const userRole = req.session.user.role;
-    if (allowedRoles.includes(userRole)) {
-      return next();
-    }
+    try {
+      const user = await getCurrentUser(req);
+      if (!user) {
+        delete req.session.user;
+        return res.redirect('/login');
+      }
+      const blocked = accountAccessError(user);
+      if (blocked) return renderForbidden(res, blocked);
+      if (user.role === 'admin' && !isConfiguredAdministrator(user)) {
+        return renderForbidden(res, 'Administrator access is reserved for the account configured by ADMIN_EMAIL.');
+      }
+      if (allowedRoles.includes(user.role)) return next();
 
-    // Role mismatch: 403 Forbidden
-    res.status(403);
-    return res.render('about', {
-      title: '403 Forbidden - Access Restricted',
-      page: 'error',
-      errorMessage: 'Access restricted: Your account role does not have authorization to view this resource.',
-      status: 403
-    });
+      return renderForbidden(res, 'Access restricted: Your account role does not have authorization to view this resource.');
+    } catch (error) {
+      return next(error);
+    }
   };
 }
 
-function requireAuthApi(req, res, next) {
-  if (req.session && req.session.user) {
-    return next();
+async function requireAuthApi(req, res, next) {
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({
+      success: false,
+      error: 'Authentication required. Please log in.'
+    });
   }
-  return res.status(401).json({
-    success: false,
-    error: 'Authentication required. Please log in.'
-  });
+  try {
+    const user = await getCurrentUser(req);
+    if (!user) {
+      delete req.session.user;
+      return res.status(401).json({ success: false, error: 'Authentication required. Please log in.' });
+    }
+    const blocked = accountAccessError(user);
+    if (blocked) return res.status(403).json({ success: false, error: blocked });
+    if (user.role === 'admin' && !isConfiguredAdministrator(user)) {
+      return res.status(403).json({ success: false, error: 'Administrator access is not configured for this account.' });
+    }
+    return next();
+  } catch (error) {
+    return next(error);
+  }
 }
 
 function requireRoleApi(...allowedRoles) {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     if (!req.session || !req.session.user) {
       return res.status(401).json({
         success: false,
@@ -57,15 +140,22 @@ function requireRoleApi(...allowedRoles) {
       });
     }
 
-    const userRole = req.session.user.role;
-    if (allowedRoles.includes(userRole)) {
-      return next();
+    try {
+      const user = await getCurrentUser(req);
+      if (!user) {
+        delete req.session.user;
+        return res.status(401).json({ success: false, error: 'Authentication required.' });
+      }
+      const blocked = accountAccessError(user);
+      if (blocked) return res.status(403).json({ success: false, error: blocked });
+      if (user.role === 'admin' && !isConfiguredAdministrator(user)) {
+        return res.status(403).json({ success: false, error: 'Administrator access is not configured for this account.' });
+      }
+      if (allowedRoles.includes(user.role)) return next();
+      return res.status(403).json({ success: false, error: 'Forbidden: Insufficient permissions for this action.' });
+    } catch (error) {
+      return next(error);
     }
-
-    return res.status(403).json({
-      success: false,
-      error: 'Forbidden: Insufficient permissions for this action.'
-    });
   };
 }
 

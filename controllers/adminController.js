@@ -8,6 +8,7 @@ const AuditLog = require('../models/AuditLog');
 const Notification = require('../models/Notification');
 const db = require('../config/db');
 const { validateExpenditure } = require('../utils/validators');
+const { sendRoleDecisionEmail } = require('../config/mailer');
 
 // 1. Admin Overview Dashboard
 exports.getDashboard = async (req, res) => {
@@ -18,6 +19,9 @@ exports.getDashboard = async (req, res) => {
     const reviewList = await Expenditure.getAll({ status: 'requires_review', limit: 5 });
     const openQuestions = await Question.getAll({ status: 'open', limit: 5 });
     const recentAudit = await AuditLog.getAll({ limit: 6 });
+    const roleApplicationStats = req.session.user.role === 'admin'
+      ? await User.getRoleApprovalStats()
+      : null;
 
     res.render('admin-dashboard', {
       title: 'Admin Overview - Choe Gi Ngultrum',
@@ -28,6 +32,7 @@ exports.getDashboard = async (req, res) => {
       reviewList: reviewList.rows,
       openQuestions,
       recentAudit,
+      roleApplicationStats,
       demoNotice: true
     });
   } catch (err) {
@@ -51,6 +56,8 @@ exports.getExpenditures = async (req, res) => {
       categoryId: category_id || null,
       search: search || null,
       createdBy: isStudentLeader ? req.session.user.id : null,
+      clubId: isStudentLeader ? req.session.user.club_id : null,
+      createdByOrClubId: isStudentLeader,
       page: parseInt(page, 10) || 1,
       limit: 15
     });
@@ -383,17 +390,129 @@ exports.getUsers = async (req, res) => {
   }
 };
 
+exports.getRoleApprovals = async (req, res) => {
+  try {
+    const status = ['pending', 'approved', 'rejected', 'suspended'].includes(req.query.status)
+      ? req.query.status
+      : null;
+    const role = ['student_leader', 'auditor'].includes(req.query.role)
+      ? req.query.role
+      : null;
+    const [applications, stats, clubs] = await Promise.all([
+      User.getRoleApplications({ status, role }),
+      User.getRoleApprovalStats(),
+      db.any('SELECT id, name FROM clubs ORDER BY name ASC')
+    ]);
+
+    return res.render('admin-role-approvals', {
+      title: 'Role Approvals - Choe Gi Ngultrum',
+      page: 'admin-role-approvals',
+      applications,
+      stats,
+      clubs,
+      filters: { status, role },
+      success: req.query.success || null,
+      error: req.query.error || null
+    });
+  } catch (err) {
+    console.error('Role applications load failed:', err.code || 'DATABASE_ERROR');
+    return res.status(500).render('about', {
+      title: 'Role Approval Error',
+      page: 'error',
+      errorMessage: 'Could not load role applications.'
+    });
+  }
+};
+
+exports.postApproveRoleApplication = async (req, res) => {
+  let applicant;
+  try {
+    const parsedClubId = req.body.club_id ? Number.parseInt(req.body.club_id, 10) : null;
+    applicant = await User.approveRoleApplication(req.params.id, req.session.user.id, parsedClubId);
+  } catch (err) {
+    const message = err.code === 'EMAIL_NOT_VERIFIED'
+      ? 'The applicant must verify their email before approval.'
+      : err.code === 'CLUB_REQUIRED'
+        ? 'Assign a club before approving a Student Leader application.'
+      : err.code === 'SELF_APPROVAL'
+        ? 'An administrator cannot approve their own application.'
+        : 'This application could not be approved. It may no longer be pending.';
+    return res.redirect('/admin/role-approvals?error=' + encodeURIComponent(message));
+  }
+
+  try {
+    await Notification.create({
+      userId: applicant.id,
+      type: 'approval',
+      message: `Your ${applicant.requested_role.replace('_', ' ')} application was approved.`,
+      link: applicant.role === 'auditor' ? '/audit-log' : '/leader/dashboard'
+    });
+  } catch (err) {
+    console.error('Applicant approval notification failed:', err.code || 'NOTIFICATION_ERROR');
+  }
+
+  try {
+    await sendRoleDecisionEmail(applicant.email, applicant.name, 'approved');
+  } catch (err) {
+    console.error('Approval email failed:', err.code || 'SMTP_ERROR');
+  }
+  return res.redirect('/admin/role-approvals?success=' + encodeURIComponent('Application approved and recorded in the audit log.'));
+};
+
+exports.postRejectRoleApplication = async (req, res) => {
+  const reason = typeof req.body.rejection_reason === 'string' ? req.body.rejection_reason.trim() : '';
+  if (reason.length < 5 || reason.length > 1000) {
+    return res.redirect('/admin/role-approvals?error=' + encodeURIComponent('Enter a rejection reason between 5 and 1000 characters.'));
+  }
+
+  let applicant;
+  try {
+    applicant = await User.rejectRoleApplication(req.params.id, req.session.user.id, reason);
+  } catch (err) {
+    const message = err.code === 'EMAIL_NOT_VERIFIED'
+      ? 'The applicant must verify their email before an application decision.'
+      : err.code === 'SELF_APPROVAL'
+        ? 'An administrator cannot reject their own application.'
+        : 'This application could not be rejected. It may no longer be pending.';
+    return res.redirect('/admin/role-approvals?error=' + encodeURIComponent(message));
+  }
+
+  try {
+    await Notification.create({
+      userId: applicant.id,
+      type: 'rejection',
+      message: `Your ${applicant.requested_role.replace('_', ' ')} application was rejected. Reason: ${reason}`,
+      link: '/login'
+    });
+  } catch (err) {
+    console.error('Applicant rejection notification failed:', err.code || 'NOTIFICATION_ERROR');
+  }
+
+  try {
+    await sendRoleDecisionEmail(applicant.email, applicant.name, 'rejected', reason);
+  } catch (err) {
+    console.error('Rejection email failed:', err.code || 'SMTP_ERROR');
+  }
+  return res.redirect('/admin/role-approvals?success=' + encodeURIComponent('Application rejected and recorded in the audit log.'));
+};
+
 exports.postUpdateUserRole = async (req, res) => {
   try {
     const { id } = req.params;
     const { role } = req.body;
-    const allowed = ['student', 'student_leader', 'finance_officer', 'admin', 'auditor'];
+    const allowed = ['student', 'finance_officer'];
 
     if (!allowed.includes(role)) {
-      return res.redirect('/admin/users?error=' + encodeURIComponent('Invalid role specified.'));
+      return res.redirect('/admin/users?error=' + encodeURIComponent('Administrator, Student Leader, and Auditor roles are managed only through secure provisioning and approval workflows.'));
     }
 
-    await User.updateRole(id, role);
+    const target = await User.findById(id);
+    if (!target || Number(target.id) === Number(req.session.user.id) ||
+        target.email.toLowerCase() === String(process.env.ADMIN_EMAIL || '').trim().toLowerCase()) {
+      return res.redirect('/admin/users?error=' + encodeURIComponent('This account cannot be changed through general role management.'));
+    }
+
+    await User.updateRole(id, role, req.session.user.id);
     res.redirect('/admin/users?success=' + encodeURIComponent('User role updated successfully.'));
   } catch (err) {
     console.error('Update role error:', err);

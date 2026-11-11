@@ -16,6 +16,7 @@
         <a href="/admin/expenditures#new" class="btn btn-sm btn-primary">+ Record Expense</a>
         <% if (user.role === 'admin') { %>
           <a href="/admin/approvals" class="btn btn-sm btn-accent">Approval Queue</a>
+          <a href="/admin/role-approvals" class="btn btn-sm btn-secondary">Role Applications</a>
         <% } %>
       </div>
     </div>
@@ -45,6 +46,13 @@
         <div class="stat-value" style="color: #16a34a;">Nu. <%= Number(stats.totalSpent).toLocaleString() %></div>
         <div class="stat-meta"><%= stats.percentSpent %>% of total budget</div>
       </div>
+      <% if (roleApplicationStats) { %>
+        <div class="stat-card" style="border-left: 4px solid #7c3aed;">
+          <div class="stat-title">Pending Role Applications</div>
+          <div class="stat-value" style="color:#7c3aed;"><%= roleApplicationStats.pending_leaders + roleApplicationStats.pending_auditors %></div>
+          <div class="stat-meta"><%= roleApplicationStats.pending_leaders %> Leaders · <%= roleApplicationStats.pending_auditors %> Auditors · <%= roleApplicationStats.unverified_applications %> unverified</div>
+        </div>
+      <% } %>
     </div>
 
     <!-- Two-column queues -->

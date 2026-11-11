@@ -35,11 +35,11 @@
             <% if (['admin', 'finance_officer'].includes(user.role)) { %>
               <li><a href="/admin/dashboard" class="nav-link <%= typeof page !== 'undefined' && page.startsWith('admin') ? 'active' : '' %>">Admin Panel</a></li>
             <% } else if (user.role === 'student_leader') { %>
-              <li><a href="/admin/expenditures" class="nav-link <%= typeof page !== 'undefined' && page === 'admin-expenditures' ? 'active' : '' %>">Record Expenses</a></li>
+              <li><a href="/leader/dashboard" class="nav-link <%= typeof page !== 'undefined' && page === 'leader-dashboard' ? 'active' : '' %>">Leader Dashboard</a></li>
             <% } %>
 
             <% if (user.role === 'auditor') { %>
-              <li><a href="/audit-log" class="nav-link <%= typeof page !== 'undefined' && page === 'audit-log' ? 'active' : '' %>">Audit Log</a></li>
+              <li><a href="/auditor/dashboard" class="nav-link <%= typeof page !== 'undefined' && page === 'auditor-dashboard' ? 'active' : '' %>">Auditor Dashboard</a></li>
             <% } %>
           <% } %>
         </ul>

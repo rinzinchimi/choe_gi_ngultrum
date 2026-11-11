@@ -3,6 +3,11 @@ const Category = require('../models/Category');
 const Notification = require('../models/Notification');
 
 exports.getDashboard = async (req, res) => {
+  const role = req.session.user.role;
+  if (role === 'admin' || role === 'finance_officer') return res.redirect('/admin/dashboard');
+  if (role === 'student_leader') return res.redirect('/leader/dashboard');
+  if (role === 'auditor') return res.redirect('/auditor/dashboard');
+
   try {
     const stats = await Expenditure.getSummaryStats();
     const categoriesWithSpend = await Category.getSummaryWithSpend();

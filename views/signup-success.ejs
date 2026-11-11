@@ -8,11 +8,13 @@
 
     <% if (delivery) { %>
       <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
-        Gmail did not accept the development email. The verification link for <strong><%= email %></strong> was printed in the app server terminal. Open it on this computer or on a phone connected to the same Wi-Fi.
+        The verification email was <strong>not sent</strong> to <strong><%= email %></strong>. A development-only verification link was printed in the app server terminal. Open it on this computer, or configure Gmail SMTP and use <a href="/resend-verification">Resend Verification Email</a>. You do not need to register again.
+        <% if (applicationRole) { %> After email verification, your <%= applicationRole === 'auditor' ? 'Auditor' : 'Student Leader' %> application will await administrator approval.<% } %>
       </p>
     <% } else { %>
       <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
         A verification link has been sent to <strong><%= email %></strong>. Click it to confirm your college email and activate your account.
+        <% if (applicationRole) { %> After verification, your <%= applicationRole === 'auditor' ? 'Auditor' : 'Student Leader' %> application will remain pending until an administrator reviews it.<% } %>
       </p>
     <% } %>
 

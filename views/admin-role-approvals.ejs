@@ -1,0 +1,92 @@
+<%- include('partials/header') %>
+
+<div class="admin-layout">
+  <%- include('partials/admin-sidebar') %>
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+      <div><h2 style="font-size:1.6rem;margin-bottom:0.25rem;">Role Approval Management</h2><p style="color:var(--text-muted);margin:0;">Review verified Student Leader and Auditor applications.</p></div>
+    </div>
+
+    <% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+    <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-title">Total Registered Users</div><div class="stat-value"><%= stats.total_users %></div></div>
+      <div class="stat-card accent"><div class="stat-title">Pending Leaders</div><div class="stat-value"><%= stats.pending_leaders %></div></div>
+      <div class="stat-card accent"><div class="stat-title">Pending Auditors</div><div class="stat-value"><%= stats.pending_auditors %></div></div>
+      <div class="stat-card success"><div class="stat-title">Approved Applications</div><div class="stat-value"><%= stats.approved_applications %></div></div>
+      <div class="stat-card"><div class="stat-title">Rejected Applications</div><div class="stat-value"><%= stats.rejected_applications %></div></div>
+      <div class="stat-card" style="border-left:4px solid #d97706;"><div class="stat-title">Unverified Applications</div><div class="stat-value"><%= stats.unverified_applications %></div></div>
+    </div>
+
+    <div class="card">
+      <form action="/admin/role-approvals" method="GET" class="filter-bar" style="margin-bottom:1rem;">
+        <div class="filter-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" for="status">Application status</label>
+            <select class="form-control" id="status" name="status">
+              <option value="">All applications</option>
+              <% ['pending','approved','rejected','suspended'].forEach(value => { %><option value="<%= value %>" <%= filters.status === value ? 'selected' : '' %>><%= value[0].toUpperCase() + value.slice(1) %></option><% }) %>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" for="role">Requested role</label>
+            <select class="form-control" id="role" name="role">
+              <option value="">All roles</option>
+              <option value="student_leader" <%= filters.role === 'student_leader' ? 'selected' : '' %>>Student Leaders</option>
+              <option value="auditor" <%= filters.role === 'auditor' ? 'selected' : '' %>>Auditors</option>
+            </select>
+          </div>
+          <div style="align-self:end;"><button class="btn btn-primary" type="submit">Apply Filters</button> <a href="/admin/role-approvals" class="btn btn-secondary">Clear</a></div>
+        </div>
+      </form>
+
+      <% if (applications.length === 0) { %>
+        <p style="color:var(--text-muted);">No role applications match these filters.</p>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead><tr><th>Applicant</th><th>Requested Role</th><th>ID / Department</th><th>Email</th><th>Status</th><th>Registered</th><th>Actions</th></tr></thead>
+            <tbody>
+              <% applications.forEach(application => { %>
+                <tr>
+                  <td><strong><%= application.name %></strong><details style="margin-top:0.3rem;"><summary style="cursor:pointer;color:var(--primary);font-size:0.8rem;">View Details</summary><div style="font-size:0.8rem;margin-top:0.4rem;">Email: <%= application.email %><br>Department: <%= application.department || '—' %><br>College ID: <%= application.institution_id || '—' %><br>Club: <%= application.club_name || '—' %><br>Designation: <%= application.designation || '—' %><br>Email verified: <%= application.is_verified ? 'Yes' : 'No' %><% if (application.rejection_reason) { %><br>Rejection reason: <%= application.rejection_reason %><% } %></div></details></td>
+                  <td><%= application.requested_role === 'student_leader' ? 'Student Leader' : 'Auditor' %></td>
+                  <td><%= application.institution_id || '—' %><div style="font-size:0.75rem;color:var(--text-muted);"><%= application.department || '' %></div></td>
+                  <td><%= application.is_verified ? 'Verified' : 'Email Not Verified' %></td>
+                  <td><span class="badge badge-<%= application.approval_status === 'approved' ? 'approved' : (application.approval_status === 'rejected' ? 'rejected' : 'pending') %>"><%= application.approval_status.replace('_',' ') %></span></td>
+                  <td><%= new Date(application.created_at).toLocaleDateString() %></td>
+                  <td>
+                    <% if (application.approval_status === 'pending' && application.is_verified) { %>
+                      <form action="/admin/role-approvals/<%= application.id %>/approve" method="POST" style="margin-bottom:0.4rem;" onsubmit="return confirm('Approve this role application?');">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <% if (application.requested_role === 'student_leader') { %>
+                          <select name="club_id" class="form-control" required style="min-width:170px;margin-bottom:0.35rem;">
+                            <option value="">Assign club</option>
+                            <% clubs.forEach(club => { %><option value="<%= club.id %>"><%= club.name %></option><% }) %>
+                          </select>
+                        <% } %>
+                        <button type="submit" class="btn btn-sm btn-primary">Approve</button>
+                      </form>
+                      <form action="/admin/role-approvals/<%= application.id %>/reject" method="POST" onsubmit="return confirm('Reject this role application?');">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <input type="text" name="rejection_reason" class="form-control" minlength="5" maxlength="1000" placeholder="Rejection reason" required style="min-width:170px;margin-bottom:0.35rem;">
+                        <button type="submit" class="btn btn-sm btn-secondary">Reject</button>
+                      </form>
+                    <% } else if (application.approval_status === 'pending') { %>
+                      <span style="color:var(--text-muted);font-size:0.8rem;">Verify email first</span>
+                    <% } else { %>
+                      <span style="color:var(--text-muted);font-size:0.8rem;">Reviewed<% if (application.reviewer_name) { %> by <%= application.reviewer_name %><% } %></span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

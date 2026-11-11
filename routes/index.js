@@ -15,6 +15,7 @@ const questionController = require('../controllers/questionController');
 const notificationController = require('../controllers/notificationController');
 const adminController = require('../controllers/adminController');
 const auditorController = require('../controllers/auditorController');
+const roleDashboardController = require('../controllers/roleDashboardController');
 
 // Middleware
 const { requireAuth, requireRole, csrfProtection, validateCsrf } = require('../middleware/auth');
@@ -55,6 +56,8 @@ router.get('/about', aboutController.getAbout);
 
 router.get('/login', authController.getLogin);
 router.post('/login', authController.postLogin);
+router.get('/resend-verification', authController.getResendVerification);
+router.post('/resend-verification', validateCsrf, authController.postResendVerification);
 router.post('/logout', authController.postLogout);
 
 router.get('/signup', authController.getSignup);
@@ -73,6 +76,8 @@ router.post('/reset-password/:token', authController.postResetPassword);
 // Student & General Transparency Routes (Student, Leader, Finance, Admin, Auditor)
 // ---------------------------------------------------------------------------
 router.get('/dashboard', requireAuth, dashboardController.getDashboard);
+router.get('/leader/dashboard', requireRole('student_leader'), roleDashboardController.getLeaderDashboard);
+router.get('/auditor/dashboard', requireRole('auditor'), roleDashboardController.getAuditorDashboard);
 router.get('/expenditures', expenditureController.getExpenditures); // Publicly viewable, richer if logged in
 router.get('/expenditures/:id', expenditureController.getExpenditureDetail);
 router.post('/expenditures/:id/question', requireAuth, questionController.postQuestion);
@@ -115,6 +120,9 @@ router.post('/admin/questions/:id/answer', requireRole('admin', 'finance_officer
 // Users management (Admin only)
 router.get('/admin/users', requireRole('admin'), adminController.getUsers);
 router.post('/admin/users/:id/role', requireRole('admin'), adminController.postUpdateUserRole);
+router.get('/admin/role-approvals', requireRole('admin'), adminController.getRoleApprovals);
+router.post('/admin/role-approvals/:id/approve', requireRole('admin'), validateCsrf, adminController.postApproveRoleApplication);
+router.post('/admin/role-approvals/:id/reject', requireRole('admin'), validateCsrf, adminController.postRejectRoleApplication);
 
 // Reports & CSV export
 router.get('/admin/reports', requireRole('admin', 'finance_officer', 'auditor'), adminController.getReports);
