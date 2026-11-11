@@ -16,6 +16,34 @@ CREATE TABLE IF NOT EXISTS clubs (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Ensure the official Sherubtse organizations are available for leader assignments.
+INSERT INTO clubs (name) VALUES
+  ('Forum of International and National Awareness (FINA)'),
+  ('Bhutan Youth Foundation (BYF)'),
+  ('Cultural Club'),
+  ('Democracy Club'),
+  ('Gyjur Duechen Tshokpa (GDT)'),
+  ('Sherubtse GNH Youth Club'),
+  ('Karate Unit'),
+  ('Rovers Scout'),
+  ('Salon Unit'),
+  ('Sherubtse Art Club (SAC)'),
+  ('Sherubtse Health Unit'),
+  ('Sherubtse Taekwondo Unit'),
+  ('Singye Karm Unit'),
+  ('Sherubtse Media Society'),
+  ('Sherubtse Organic Farming Society'),
+  ('Social Service Unit'),
+  ('Sherubtse Toilet Organization'),
+  ('Sherubtse Tarayana Unit'),
+  ('Sherubtse UN Club'),
+  ('Youth Volunteer in Action (Y-VIA)'),
+  ('Sherubtse Y-PEER Network'),
+  ('Department of Arts and Humanities Forum'),
+  ('Sherubtse Science Forum'),
+  ('Social Science Forum')
+ON CONFLICT (name) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS users (
   id                   SERIAL PRIMARY KEY,
   name                 TEXT NOT NULL,

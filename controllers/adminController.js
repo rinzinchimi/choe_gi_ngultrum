@@ -7,6 +7,7 @@ const Document = require('../models/Document');
 const AuditLog = require('../models/AuditLog');
 const Notification = require('../models/Notification');
 const db = require('../config/db');
+const roleAssignmentClubs = require('../config/roleAssignmentClubs');
 const { validateExpenditure } = require('../utils/validators');
 const { sendRoleDecisionEmail } = require('../config/mailer');
 
@@ -401,7 +402,7 @@ exports.getRoleApprovals = async (req, res) => {
     const [applications, stats, clubs] = await Promise.all([
       User.getRoleApplications({ status, role }),
       User.getRoleApprovalStats(),
-      db.any('SELECT id, name FROM clubs ORDER BY name ASC')
+      db.any('SELECT id, name FROM clubs WHERE name = ANY($1::text[]) ORDER BY array_position($1::text[], name)', [roleAssignmentClubs])
     ]);
 
     return res.render('admin-role-approvals', {
@@ -421,26 +422,6 @@ exports.getRoleApprovals = async (req, res) => {
       page: 'error',
       errorMessage: 'Could not load role applications.'
     });
-  }
-};
-
-exports.postCreateClub = async (req, res) => {
-  const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
-  const description = typeof req.body.description === 'string' ? req.body.description.trim() : '';
-  if (name.length < 2 || name.length > 120 || description.length > 500) {
-    return res.redirect('/admin/role-approvals?error=' + encodeURIComponent('Enter a club name between 2 and 120 characters. Description must be 500 characters or fewer.'));
-  }
-
-  try {
-    await db.none('INSERT INTO clubs (name, description) VALUES ($1, $2)', [name, description || null]);
-    return res.redirect('/admin/role-approvals?success=' + encodeURIComponent(`Club "${name}" added. You can now assign it to a Student Leader.`));
-  } catch (err) {
-    if (err.code === '23505') {
-      return res.redirect('/admin/role-approvals?error=' + encodeURIComponent('A club with that name already exists.'));
-    }
-    const detail = String(err.message || 'Unknown database error').replace(/[\r\n\t]+/g, ' ').slice(0, 300);
-    console.error('Club creation failed:', err.code || 'DATABASE_ERROR', detail);
-    return res.redirect('/admin/role-approvals?error=' + encodeURIComponent('The club could not be added. Check the application logs and try again.'));
   }
 };
 

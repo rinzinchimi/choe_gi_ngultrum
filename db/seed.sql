@@ -7,12 +7,31 @@ TRUNCATE TABLE review_flags, notifications, questions, documents, audit_log, exp
 
 -- Insert Clubs
 INSERT INTO clubs (id, name, description) VALUES
-  (1, 'Cultural & Heritage Club', 'Promotes Bhutanese traditional performing arts, mask dance, and festivals'),
-  (2, 'Debate & Literary Society', 'Organizes inter-college debates, poetry slams, and literary festivals'),
-  (3, 'Rover Scouts & Social Service', 'Community outreach, disaster response, and campus volunteering'),
-  (4, 'Football & Athletics Club', 'Coordinates college league, marathon, and sporting fixtures'),
-  (5, 'IT & Innovation Club', 'Coding competitions, robotics workshops, and digital campus support');
-ALTER SEQUENCE clubs_id_seq RESTART WITH 6;
+  (1, 'Forum of International and National Awareness (FINA)', NULL),
+  (2, 'Bhutan Youth Foundation (BYF)', NULL),
+  (3, 'Cultural Club', NULL),
+  (4, 'Democracy Club', NULL),
+  (5, 'Gyjur Duechen Tshokpa (GDT)', NULL),
+  (6, 'Sherubtse GNH Youth Club', NULL),
+  (7, 'Karate Unit', NULL),
+  (8, 'Rovers Scout', NULL),
+  (9, 'Salon Unit', NULL),
+  (10, 'Sherubtse Art Club (SAC)', NULL),
+  (11, 'Sherubtse Health Unit', NULL),
+  (12, 'Sherubtse Taekwondo Unit', NULL),
+  (13, 'Singye Karm Unit', NULL),
+  (14, 'Sherubtse Media Society', NULL),
+  (15, 'Sherubtse Organic Farming Society', NULL),
+  (16, 'Social Service Unit', NULL),
+  (17, 'Sherubtse Toilet Organization', NULL),
+  (18, 'Sherubtse Tarayana Unit', NULL),
+  (19, 'Sherubtse UN Club', NULL),
+  (20, 'Youth Volunteer in Action (Y-VIA)', NULL),
+  (21, 'Sherubtse Y-PEER Network', NULL),
+  (22, 'Department of Arts and Humanities Forum', NULL),
+  (23, 'Sherubtse Science Forum', NULL),
+  (24, 'Social Science Forum', NULL);
+ALTER SEQUENCE clubs_id_seq RESTART WITH 25;
 
 -- Insert Users (Password: Transparency@2026)
 -- Hash: $2b$10$eKR3rlAdsGfymbn9JhH0yeLnDe8k.ytnw8yeJsmHiFjmY30o6adSi

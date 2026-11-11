@@ -123,7 +123,6 @@ router.post('/admin/users/:id/role', requireRole('admin'), adminController.postU
 router.get('/admin/role-approvals', requireRole('admin'), adminController.getRoleApprovals);
 router.post('/admin/role-approvals/:id/approve', requireRole('admin'), validateCsrf, adminController.postApproveRoleApplication);
 router.post('/admin/role-approvals/:id/reject', requireRole('admin'), validateCsrf, adminController.postRejectRoleApplication);
-router.post('/admin/role-approvals/clubs', requireRole('admin'), validateCsrf, adminController.postCreateClub);
 
 // Reports & CSV export
 router.get('/admin/reports', requireRole('admin', 'finance_officer', 'auditor'), adminController.getReports);
