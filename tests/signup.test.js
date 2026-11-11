@@ -6,6 +6,7 @@ describe('User Registration & Verification Flow', () => {
   afterAll(async () => {
     // Clean up test user
     await db.none("DELETE FROM users WHERE email = 'newstudent@sherubtse.rub.edu.bt'");
+    await db.none("DELETE FROM users WHERE email = 'newleader@sherubtse.rub.edu.bt'");
     if (db.$pgp) db.$pgp.end();
   });
 
@@ -61,39 +62,37 @@ describe('User Registration & Verification Flow', () => {
     const user = await db.oneOrNone("SELECT * FROM users WHERE email = 'newstudent@sherubtse.rub.edu.bt'");
     expect(user).not.toBeNull();
     expect(user.role).toBe('student');
-    expect(user.is_verified).toBe(false);
-    expect(user.verification_token).toBeDefined();
-    expect(user.verification_token_expires.getTime()).toBeGreaterThan(Date.now());
+    expect(user.is_verified).toBe(true);
+    expect(user.verification_token).toBeNull();
+    expect(user.verification_token_expires).toBeNull();
+    expect(res.header.location).toContain('verified=true');
+  });
 
-    const originalToken = user.verification_token;
-    await db.none(
-      `UPDATE users SET verification_email_last_sent_at = NOW() - INTERVAL '2 minutes'
-       WHERE id = $1`,
-      [user.id]
+  it('POST /signup skips email verification but keeps role applications pending admin approval', async () => {
+    const res = await request(app)
+      .post('/signup')
+      .send({
+        name: 'New Student Leader',
+        email: 'newleader@sherubtse.rub.edu.bt',
+        requestedRole: 'student_leader',
+        institutionId: 'TEST-LEADER-001',
+        designation: 'Club President',
+        password: 'Transparency@2026',
+        confirmPassword: 'Transparency@2026'
+      });
+
+    expect(res.status).toBe(302);
+    expect(res.header.location).toContain('verified=true');
+    expect(res.header.location).toContain('application=student_leader');
+
+    const user = await db.one(
+      "SELECT is_verified, role, requested_role, approval_status, verification_token FROM users WHERE email = 'newleader@sherubtse.rub.edu.bt'"
     );
-
-    // Existing unverified accounts can request a fresh link without registering again.
-    const resendRes = await request(app)
-      .post('/resend-verification')
-      .send({ email: user.email, password: 'Transparency@2026' });
-    expect(resendRes.status).toBe(200);
-    expect(resendRes.text).toContain('Verify Account');
-    expect(resendRes.text).toContain('development-only link');
-
-    const resentUser = await db.one('SELECT * FROM users WHERE id = $1', [user.id]);
-    expect(resentUser.verification_token).not.toBe(originalToken);
-    expect(resentUser.verification_token_expires.getTime()).toBeGreaterThan(Date.now());
-
-    // Replaced tokens cannot be reused; the fresh token verifies the account.
-    const oldVerifyRes = await request(app).get(`/verify/${originalToken}`);
-    expect(oldVerifyRes.status).toBe(400);
-
-    const verifyRes = await request(app).get(`/verify/${resentUser.verification_token}`);
-    expect(verifyRes.status).toBe(200);
-    expect(verifyRes.text).toContain('Email Verified Successfully');
-
-    const updatedUser = await db.one("SELECT is_verified FROM users WHERE id = $1", [user.id]);
-    expect(updatedUser.is_verified).toBe(true);
+    expect(user.is_verified).toBe(true);
+    expect(user.role).toBe('student');
+    expect(user.requested_role).toBe('student_leader');
+    expect(user.approval_status).toBe('pending');
+    expect(user.verification_token).toBeNull();
   });
 
   it('POST /signup rejects duplicate registered email', async () => {

@@ -20,7 +20,7 @@ npm.cmd run setup:admin
 npm.cmd start
 ```
 
-If an account already exists for `ADMIN_EMAIL`, setup grants that account administrator role and keeps its current password. Otherwise, setup creates it using `ADMIN_PASSWORD`. Public signup can request Student Leader or Auditor access; those accounts must verify their email and await approval under **Admin → Role Approvals**. Existing unverified accounts can request a fresh link at `/resend-verification`.
+If an account already exists for `ADMIN_EMAIL`, setup grants that account administrator role and keeps its current password. Otherwise, setup creates it using `ADMIN_PASSWORD`. New public signups are active without email verification. Student Leader and Auditor applications still require administrator approval under **Admin → Role Approvals**. Existing unverified accounts can request a fresh link at `/resend-verification`.
 
 ## Deploying on Render
 

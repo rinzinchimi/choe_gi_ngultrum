@@ -3,10 +3,18 @@
 <div style="max-width: 520px; margin: 3rem auto; text-align: center;">
   <div class="card" style="padding: 2.5rem 2rem;">
     <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">
-      <%= delivery ? 'Account Created' : 'Check Your Email' %>
+      <%= accountReady || delivery ? 'Account Created' : 'Check Your Email' %>
     </h2>
 
-    <% if (delivery) { %>
+    <% if (accountReady) { %>
+      <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
+        <% if (applicationRole) { %>
+          Email verification is not required. Your <%= applicationRole === 'auditor' ? 'Auditor' : 'Student Leader' %> application is pending administrator approval. You can sign in after it is approved.
+        <% } else { %>
+          Your account is ready. Email verification is not required; you can sign in now.
+        <% } %>
+      </p>
+    <% } else if (delivery) { %>
       <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 1.5rem;">
         The verification email was <strong>not sent</strong> to <strong><%= email %></strong>. A development-only verification link was printed in the app server terminal. Open it on this computer, or configure Gmail SMTP and use <a href="/resend-verification">Resend Verification Email</a>. You do not need to register again.
         <% if (applicationRole) { %> After email verification, your <%= applicationRole === 'auditor' ? 'Auditor' : 'Student Leader' %> application will await administrator approval.<% } %>

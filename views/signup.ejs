@@ -40,7 +40,7 @@
           <option value="student_leader" <%= formData.requestedRole === 'student_leader' ? 'selected' : '' %>>Student Leader Applicant</option>
           <option value="auditor" <%= formData.requestedRole === 'auditor' ? 'selected' : '' %>>Auditor Applicant</option>
         </select>
-        <div class="form-hint">Leader and Auditor access requires email verification and administrator approval.</div>
+        <div class="form-hint">New accounts can sign in without email verification. Leader and Auditor access still requires administrator approval.</div>
       </div>
 
       <div class="form-group" id="institution-id-field" style="display:none;">
@@ -70,7 +70,7 @@
       </div>
 
       <div style="background: var(--surface-alt); padding: 0.85rem; border-radius: 0.5rem; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">
-        Self-registration never grants administrator access. Student Leader and Auditor applicants must verify email and receive administrator approval.
+        Self-registration never grants administrator access. Student Leader and Auditor applicants must receive administrator approval.
       </div>
 
       <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">

@@ -62,19 +62,6 @@ async function notifyAdministratorOfRoleApplication(applicant) {
   }
 }
 
-function getVerificationEmailErrorMessage(error) {
-  if (error.code === 'EAUTH') {
-    return 'Gmail rejected the sender login. Check that 2-Step Verification is enabled and configure a fresh Gmail App Password.';
-  }
-  if (error.code === 'EMAIL_CONFIG_INVALID_APP_PASSWORD_LENGTH') {
-    return 'GMAIL_APP_PASSWORD must be the complete 16-character Gmail App Password. Update .env and restart the app.';
-  }
-  if (error.code === 'EMAIL_CONFIG_INCOMPLETE' || error.code === 'EMAIL_CONFIG_INVALID_USER') {
-    return 'Set a valid GMAIL_USER and GMAIL_APP_PASSWORD in .env, then restart the app.';
-  }
-  return 'The verification email could not be sent. Check the app server email configuration and try again.';
-}
-
 exports.getLogin = (req, res) => {
   if (req.session && req.session.user) {
     return res.redirect('/dashboard');
@@ -236,9 +223,6 @@ exports.postSignup = async (req, res) => {
     }
 
     const { name, email, password } = validation.data;
-    // Keep the address as entered for delivery; the database stores a
-    // lowercase canonical address for case-insensitive account lookup.
-    const deliveryEmail = String(req.body.email).trim();
     const requestedRole = typeof req.body.requestedRole === 'string' ? req.body.requestedRole : 'student';
     const supportedRequestedRoles = ['student', 'student_leader', 'auditor'];
     const institutionId = sanitizeText(req.body.institutionId || '').slice(0, 100);
@@ -285,7 +269,6 @@ exports.postSignup = async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const { token: verificationToken, expiresAt } = createVerificationToken();
     const isRoleApplication = requestedRole !== 'student';
 
     await User.create({
@@ -295,8 +278,9 @@ exports.postSignup = async (req, res) => {
       role: 'student', // Self signup is always student
       requestedRole: isRoleApplication ? requestedRole : null,
       approvalStatus: isRoleApplication ? 'pending' : 'approved',
-      verificationToken,
-      verificationTokenExpiresAt: expiresAt,
+      isVerified: true,
+      verificationToken: null,
+      verificationTokenExpiresAt: null,
       department: department || null,
       institutionId: institutionId || null,
       designation: designation || null
@@ -305,7 +289,7 @@ exports.postSignup = async (req, res) => {
     if (isRoleApplication) {
       await notifyAdministratorOfRoleApplication({
         name,
-        email: deliveryEmail,
+        email,
         requestedRole,
         institutionId,
         department,
@@ -313,21 +297,8 @@ exports.postSignup = async (req, res) => {
       });
     }
 
-    try {
-      const emailResult = await sendVerificationEmail(deliveryEmail, verificationToken, expiresAt);
-      const delivery = emailResult.dev ? '&delivery=console' : '';
-      const application = isRoleApplication ? '&application=' + encodeURIComponent(requestedRole) : '';
-      return res.redirect('/signup-success?email=' + encodeURIComponent(email) + delivery + application);
-    } catch (emailErr) {
-      console.error('Verification email send failed:', emailErr.code || emailErr.message);
-      const emailErrorMessage = `Your account was created, but the verification email was not sent. ${getVerificationEmailErrorMessage(emailErr)} You can use Resend Verification Email without registering again.`;
-      return res.status(502).render('signup', {
-        title: 'Sign Up - Choe Gi Ngultrum',
-        page: 'signup',
-        errors: [emailErrorMessage],
-        formData: req.body
-      });
-    }
+    const application = isRoleApplication ? '&application=' + encodeURIComponent(requestedRole) : '';
+    return res.redirect('/signup-success?email=' + encodeURIComponent(email) + '&verified=true' + application);
 
   } catch (err) {
     console.error('Signup error:', err.code || err.message);
@@ -409,10 +380,11 @@ exports.postResendVerification = async (req, res) => {
 
 exports.getSignupSuccess = (req, res) => {
   res.render('signup-success', {
-    title: 'Registration Successful - Verify Email',
+    title: 'Registration Successful',
     page: 'signup',
     email: req.query.email || '',
     delivery: req.query.delivery === 'console',
+    accountReady: req.query.verified === 'true',
     applicationRole: ['student_leader', 'auditor'].includes(req.query.application) ? req.query.application : null
   });
 };
