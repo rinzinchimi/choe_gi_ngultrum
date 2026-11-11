@@ -9,6 +9,10 @@ const { connectMongo } = require('./config/mongo');
 
 const app = express();
 
+// Render terminates HTTPS at its edge proxy. Trust that single proxy so
+// express-session can detect X-Forwarded-Proto=https and issue secure cookies.
+app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : false);
+
 // View engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
