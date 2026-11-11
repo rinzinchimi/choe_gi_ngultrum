@@ -430,13 +430,20 @@ exports.postApproveRoleApplication = async (req, res) => {
     const parsedClubId = req.body.club_id ? Number.parseInt(req.body.club_id, 10) : null;
     applicant = await User.approveRoleApplication(req.params.id, req.session.user.id, parsedClubId);
   } catch (err) {
-    const message = err.code === 'EMAIL_NOT_VERIFIED'
-      ? 'The applicant must verify their email before approval.'
-      : err.code === 'CLUB_REQUIRED'
-        ? 'Assign a club before approving a Student Leader application.'
+    const message = err.code === 'CLUB_REQUIRED'
+      ? 'Assign a club before approving a Student Leader application.'
+      : err.code === 'INVALID_CLUB'
+        ? 'The selected club is invalid or no longer available. Refresh and choose an available club.'
       : err.code === 'SELF_APPROVAL'
         ? 'An administrator cannot approve their own application.'
-        : 'This application could not be approved. It may no longer be pending.';
+      : err.code === 'APPLICATION_NOT_PENDING'
+        ? 'This application has already been reviewed. Refresh the list to see its current status.'
+      : err.code === 'ROLE_APPLICATION_NOT_FOUND'
+        ? 'This role application could not be found. Refresh the list and try again.'
+        : 'Approval failed because of a server or database error. Check the application logs and try again.';
+    if (!['CLUB_REQUIRED', 'INVALID_CLUB', 'SELF_APPROVAL', 'APPLICATION_NOT_PENDING', 'ROLE_APPLICATION_NOT_FOUND'].includes(err.code)) {
+      console.error('Role application approval failed:', err.code || 'DATABASE_ERROR');
+    }
     return res.redirect('/admin/role-approvals?error=' + encodeURIComponent(message));
   }
 
@@ -469,11 +476,16 @@ exports.postRejectRoleApplication = async (req, res) => {
   try {
     applicant = await User.rejectRoleApplication(req.params.id, req.session.user.id, reason);
   } catch (err) {
-    const message = err.code === 'EMAIL_NOT_VERIFIED'
-      ? 'The applicant must verify their email before an application decision.'
-      : err.code === 'SELF_APPROVAL'
-        ? 'An administrator cannot reject their own application.'
-        : 'This application could not be rejected. It may no longer be pending.';
+    const message = err.code === 'SELF_APPROVAL'
+      ? 'An administrator cannot reject their own application.'
+      : err.code === 'APPLICATION_NOT_PENDING'
+        ? 'This application has already been reviewed. Refresh the list to see its current status.'
+      : err.code === 'ROLE_APPLICATION_NOT_FOUND'
+        ? 'This role application could not be found. Refresh the list and try again.'
+        : 'Rejection failed because of a server or database error. Check the application logs and try again.';
+    if (!['SELF_APPROVAL', 'APPLICATION_NOT_PENDING', 'ROLE_APPLICATION_NOT_FOUND'].includes(err.code)) {
+      console.error('Role application rejection failed:', err.code || 'DATABASE_ERROR');
+    }
     return res.redirect('/admin/role-approvals?error=' + encodeURIComponent(message));
   }
 

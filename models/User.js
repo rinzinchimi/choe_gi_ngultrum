@@ -235,14 +235,20 @@ const User = {
       if (Number(applicant.id) === Number(adminId)) {
         throw Object.assign(new Error('Administrators cannot approve their own application.'), { code: 'SELF_APPROVAL' });
       }
-      if (!applicant.is_verified) {
-        throw Object.assign(new Error('Applicant email must be verified before approval.'), { code: 'EMAIL_NOT_VERIFIED' });
-      }
       if (applicant.requested_role === 'student_leader' && !clubId) {
         throw Object.assign(new Error('A club assignment is required for Student Leader approval.'), { code: 'CLUB_REQUIRED' });
       }
       if (applicant.approval_status !== 'pending') {
         throw Object.assign(new Error('This application is no longer pending.'), { code: 'APPLICATION_NOT_PENDING' });
+      }
+      if (applicant.requested_role === 'student_leader') {
+        if (!Number.isInteger(Number(clubId)) || Number(clubId) < 1) {
+          throw Object.assign(new Error('Choose a valid club for the Student Leader.'), { code: 'INVALID_CLUB' });
+        }
+        const club = await t.oneOrNone('SELECT id FROM clubs WHERE id = $1', [clubId]);
+        if (!club) {
+          throw Object.assign(new Error('The selected club no longer exists.'), { code: 'INVALID_CLUB' });
+        }
       }
 
       const updated = await t.one(
@@ -250,8 +256,9 @@ const User = {
          SET role = requested_role, approval_status = 'approved',
              approved_by = $2, approved_at = NOW(),
              reviewed_by = $2, reviewed_at = NOW(), rejection_reason = NULL,
-             club_id = CASE WHEN requested_role = 'student_leader' THEN $3 ELSE NULL END
-         WHERE id = $1 AND approval_status = 'pending' AND is_verified = true
+             club_id = CASE WHEN requested_role = 'student_leader' THEN $3 ELSE NULL END,
+             is_verified = true, verification_token = NULL, verification_token_expires = NULL
+         WHERE id = $1 AND approval_status = 'pending'
          RETURNING id, name, email, role, requested_role, approval_status`,
         [id, adminId, clubId]
       );
@@ -287,9 +294,6 @@ const User = {
       }
       if (Number(applicant.id) === Number(adminId)) {
         throw Object.assign(new Error('Administrators cannot reject their own application.'), { code: 'SELF_APPROVAL' });
-      }
-      if (!applicant.is_verified) {
-        throw Object.assign(new Error('Applicant email must be verified before rejection.'), { code: 'EMAIL_NOT_VERIFIED' });
       }
       if (applicant.approval_status !== 'pending') {
         throw Object.assign(new Error('This application is no longer pending.'), { code: 'APPLICATION_NOT_PENDING' });

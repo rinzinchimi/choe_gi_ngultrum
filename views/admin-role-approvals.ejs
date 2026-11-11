@@ -4,7 +4,7 @@
   <%- include('partials/admin-sidebar') %>
   <div>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem;">
-      <div><h2 style="font-size:1.6rem;margin-bottom:0.25rem;">Role Approval Management</h2><p style="color:var(--text-muted);margin:0;">Review verified Student Leader and Auditor applications.</p></div>
+      <div><h2 style="font-size:1.6rem;margin-bottom:0.25rem;">Role Approval Management</h2><p style="color:var(--text-muted);margin:0;">Review Student Leader and Auditor applications. Email verification is not required.</p></div>
     </div>
 
     <% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
@@ -16,7 +16,7 @@
       <div class="stat-card accent"><div class="stat-title">Pending Auditors</div><div class="stat-value"><%= stats.pending_auditors %></div></div>
       <div class="stat-card success"><div class="stat-title">Approved Applications</div><div class="stat-value"><%= stats.approved_applications %></div></div>
       <div class="stat-card"><div class="stat-title">Rejected Applications</div><div class="stat-value"><%= stats.rejected_applications %></div></div>
-      <div class="stat-card" style="border-left:4px solid #d97706;"><div class="stat-title">Unverified Applications</div><div class="stat-value"><%= stats.unverified_applications %></div></div>
+      <div class="stat-card" style="border-left:4px solid #d97706;"><div class="stat-title">Legacy Unverified Records</div><div class="stat-value"><%= stats.unverified_applications %></div></div>
     </div>
 
     <div class="card">
@@ -53,11 +53,11 @@
                   <td><strong><%= application.name %></strong><details style="margin-top:0.3rem;"><summary style="cursor:pointer;color:var(--primary);font-size:0.8rem;">View Details</summary><div style="font-size:0.8rem;margin-top:0.4rem;">Email: <%= application.email %><br>Department: <%= application.department || '—' %><br>College ID: <%= application.institution_id || '—' %><br>Club: <%= application.club_name || '—' %><br>Designation: <%= application.designation || '—' %><br>Email verified: <%= application.is_verified ? 'Yes' : 'No' %><% if (application.rejection_reason) { %><br>Rejection reason: <%= application.rejection_reason %><% } %></div></details></td>
                   <td><%= application.requested_role === 'student_leader' ? 'Student Leader' : 'Auditor' %></td>
                   <td><%= application.institution_id || '—' %><div style="font-size:0.75rem;color:var(--text-muted);"><%= application.department || '' %></div></td>
-                  <td><%= application.is_verified ? 'Verified' : 'Email Not Verified' %></td>
+                  <td><%= application.is_verified ? 'Verified' : 'Not verified (not required)' %></td>
                   <td><span class="badge badge-<%= application.approval_status === 'approved' ? 'approved' : (application.approval_status === 'rejected' ? 'rejected' : 'pending') %>"><%= application.approval_status.replace('_',' ') %></span></td>
                   <td><%= new Date(application.created_at).toLocaleDateString() %></td>
                   <td>
-                    <% if (application.approval_status === 'pending' && application.is_verified) { %>
+                    <% if (application.approval_status === 'pending') { %>
                       <form action="/admin/role-approvals/<%= application.id %>/approve" method="POST" style="margin-bottom:0.4rem;" onsubmit="return confirm('Approve this role application?');">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                         <% if (application.requested_role === 'student_leader') { %>
@@ -73,8 +73,6 @@
                         <input type="text" name="rejection_reason" class="form-control" minlength="5" maxlength="1000" placeholder="Rejection reason" required style="min-width:170px;margin-bottom:0.35rem;">
                         <button type="submit" class="btn btn-sm btn-secondary">Reject</button>
                       </form>
-                    <% } else if (application.approval_status === 'pending') { %>
-                      <span style="color:var(--text-muted);font-size:0.8rem;">Verify email first</span>
                     <% } else { %>
                       <span style="color:var(--text-muted);font-size:0.8rem;">Reviewed<% if (application.reviewer_name) { %> by <%= application.reviewer_name %><% } %></span>
                     <% } %>
