@@ -23,6 +23,10 @@
       <div class="alert alert-danger"><%= error %></div>
     <% } %>
 
+    <% if (isStudentLeader && !leaderHasClub) { %>
+      <div class="alert alert-danger">Your account has no assigned club, so you cannot submit an expense yet. Contact an administrator to assign your club.</div>
+    <% } %>
+
     <!-- Record New Expense Form Card -->
     <div id="newExpenseCard" class="card" style="border: 2px solid var(--primary-light); background: #fdfefe; margin-bottom: 2rem;">
       <div class="card-header">
@@ -70,13 +74,19 @@
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
           <div class="form-group">
-            <label class="form-label">Associated Club / Society (Optional)</label>
-            <select name="club_id" class="form-control">
-              <option value="">None / General College</option>
-              <% clubs.forEach(cl => { %>
-                <option value="<%= cl.id %>"><%= cl.name %></option>
-              <% }) %>
-            </select>
+            <% if (isStudentLeader) { %>
+              <label class="form-label">Assigned Club</label>
+              <input type="hidden" name="club_id" value="<%= user.club_id || '' %>">
+              <input class="form-control" value="<%= user.club_name || 'No club assigned' %>" readonly>
+            <% } else { %>
+              <label class="form-label">Associated Club / Society (Optional)</label>
+              <select name="club_id" class="form-control">
+                <option value="">None / General College</option>
+                <% clubs.forEach(cl => { %>
+                  <option value="<%= cl.id %>"><%= cl.name %></option>
+                <% }) %>
+              </select>
+            <% } %>
           </div>
 
           <div class="form-group">
@@ -111,7 +121,7 @@
         </div>
 
         <div style="display: flex; gap: 0.75rem;">
-          <button type="submit" class="btn btn-primary">Save & Submit for Verification</button>
+          <button type="submit" class="btn btn-primary" <%= isStudentLeader && !leaderHasClub ? 'disabled' : '' %>>Save & Submit for Verification</button>
           <button type="button" class="btn btn-secondary" onclick="toggleNewForm()">Cancel</button>
         </div>
       </form>

@@ -64,8 +64,12 @@ exports.getExpenditures = async (req, res) => {
     });
 
     const categories = await Category.getAll();
-    const clubs = await db.any('SELECT id, name FROM clubs ORDER BY name ASC');
-    const events = await db.any('SELECT id, name FROM events ORDER BY name ASC');
+    const clubs = isStudentLeader
+      ? await db.any('SELECT id, name FROM clubs WHERE id = $1', [req.session.user.club_id || null])
+      : await db.any('SELECT id, name FROM clubs ORDER BY name ASC');
+    const events = isStudentLeader
+      ? await db.any('SELECT id, name FROM events WHERE club_id = $1 ORDER BY name ASC', [req.session.user.club_id || null])
+      : await db.any('SELECT id, name FROM events ORDER BY name ASC');
 
     res.render('admin-expenditures', {
       title: 'Manage Expenditures - Choe Gi Ngultrum',
@@ -82,6 +86,7 @@ exports.getExpenditures = async (req, res) => {
       events,
       canEdit: !isStudentLeader,
       isStudentLeader,
+      leaderHasClub: !isStudentLeader || Boolean(req.session.user.club_id),
       success: req.query.success || null,
       error: req.query.error || null
     });
